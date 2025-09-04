@@ -4,6 +4,12 @@ import CountryPicker from 'react-native-country-picker-modal';
 import NumericPad from '../../Components/Numericpad';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';  
+
+//redux and signup 
+import { sendOtp } from "../../Helper/firebaseHelper";  
+import { useDispatch } from "react-redux";
+import { setConfirmation } from "../../redux/Slices/HomeDataSlice"; 
+
 const Farmersignup = ({ navigation }) => {
     const { t } = useTranslation(); 
 
@@ -12,9 +18,36 @@ const Farmersignup = ({ navigation }) => {
     const [countryCode, setCountryCode] = useState('PK');
     const [callingCode, setCallingCode] = useState('92');
 
-    const handlePress = (num) => {
-        if (phone.length < 11) setPhone(phone + num);
-    };
+
+    //logic of redux 
+    const dispatch = useDispatch();
+
+const handleContinue = async () => {
+  try {
+    if (!phone) {
+      alert("Please enter a phone number");
+      return;
+    }
+
+    const fullPhone = `+${callingCode}${phone}`;
+    const confirmation = await sendOtp(fullPhone);
+
+    
+    dispatch(setConfirmation(confirmation));
+
+    // navigate to OTP screen
+    navigation.navigate("FarmerOtp", { phone: fullPhone });
+  } catch (error) {
+    console.error("Error sending OTP:", error.message);
+    alert("Failed to send OTP. Try again.");
+  }
+};
+
+
+   const handlePress = (num) => {
+  setPhone(phone + num);
+};
+
 
     const handleBackspace = () => setPhone(phone.slice(0, -1));
 
@@ -115,20 +148,21 @@ const Farmersignup = ({ navigation }) => {
                     )}
 
                     {/* Continue Button */}
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('FarmerOtp')}
-                        style={{
-                            width: '100%',
-                            borderRadius: 10,
-                            backgroundColor: '#006644',
-                            alignItems: 'center',
-                            marginBottom: 20,
-                        }}
-                    >
-                        <Text style={{ paddingVertical: 12, color: '#ffffff', fontSize: 20, fontWeight: 'bold' }}>
-                            {t("farmerSignup.continue")}
-                        </Text>
-                    </TouchableOpacity>
+                   <TouchableOpacity
+  onPress={handleContinue}
+  style={{
+    width: '100%',
+    borderRadius: 10,
+    backgroundColor: '#006644',
+    alignItems: 'center',
+    marginBottom: 20,
+  }}
+>
+  <Text style={{ paddingVertical: 12, color: '#ffffff', fontSize: 20, fontWeight: 'bold' }}>
+    {t("farmerSignup.continue")}
+  </Text>
+</TouchableOpacity>
+
 
                     {/* Login */}
                     <Text style={{ color: '#006644' ,fontSize: 18 }}>

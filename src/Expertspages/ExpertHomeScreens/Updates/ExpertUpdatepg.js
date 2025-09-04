@@ -22,7 +22,7 @@ const ExpertUpdate = ({ navigation }) => {
            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#031501ff' }}> {t('expertUpdates.title')}</Text>
  
            {/* Setting Icon */}
-           <TouchableOpacity onPress={() => navigation.navigate('SettingStack')}>
+           <TouchableOpacity onPress={() => navigation.navigate('ExpertSettingsStack')}>
              <Icon name="settings" size={26} color="#031501ff" />
            </TouchableOpacity>
          </View>

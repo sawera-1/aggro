@@ -24,7 +24,7 @@ const SplashScreen = ({ navigation }) => {
 
         {/* Get Started Button */}
         <TouchableOpacity
-          onPress={() => navigation.navigate('LanguageScreen')}
+          onPress={() => navigation.navigate('Language')}
           style={{
             marginTop: 30,
             padding: 12,

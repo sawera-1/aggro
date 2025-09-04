@@ -1,14 +1,10 @@
 // navigation/UpdatesStack.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-
-
-
-import UpdateScreen from '../Farmerpages/FarmerHomeScreens/Update/FarmerUpdatepg';
-import GovtReadMore from '../Farmerpages/FarmerHomeScreens/Update/GovtSchReadmorepg';
-import CropReadMore from '../Farmerpages/FarmerHomeScreens/Update/CropInfoReadmore';
-import PriceReadMore from '../Farmerpages/FarmerHomeScreens/Update/MpriceReadmore';
+import UpdateScreen from '../../Farmerpages/FarmerHomeScreens/Update/FarmerUpdatepg';
+import GovtReadMore from '../../Farmerpages/FarmerHomeScreens/Update/GovtSchReadmorepg';
+import PriceReadMore from '../../Farmerpages/FarmerHomeScreens/Update/MpriceReadmore';
+import CropReadMore from '../../Farmerpages/FarmerHomeScreens/Update/CropInfoReadmore';
 
 
 const Stack = createNativeStackNavigator();

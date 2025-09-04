@@ -1,9 +1,9 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ChannelsScreen from '../../Farmerpages/FarmerHomeScreens/Channel/FarmerChannelpg';
+import ChannelMsgScreen from '../../Farmerpages/FarmerHomeScreens/Channel/ChannelMsgpg';
+import ChannelDescription from '../../Farmerpages/FarmerHomeScreens/Channel/ChannelDescriptionpg';
 
-import ChannelsScreen from '../Farmerpages/FarmerHomeScreens/Channel/FarmerChannelpg';
-import ChannelMsgScreen from '../Farmerpages/FarmerHomeScreens/Channel/ChannelMsgpg';
-import ChannelDescription from '../Farmerpages/FarmerHomeScreens/Channel/ChannelDescriptionpg';
 
 
 const Stack = createNativeStackNavigator();

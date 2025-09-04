@@ -46,7 +46,7 @@ const ExpertChannel = ({ navigation }) => {
                             <Icon name="add" size={26} color="#031501ff" />
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => navigation.navigate('SettingStack')}>
+                        <TouchableOpacity onPress={() => navigation.navigate('ExpertSettingsStack')}>
                             <Icon name="settings" size={26} color="#031501ff" />
                         </TouchableOpacity>
                     </View>

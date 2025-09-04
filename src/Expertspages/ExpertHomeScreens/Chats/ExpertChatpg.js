@@ -42,7 +42,7 @@ const ExpertChat = ({ navigation }) => {
                     </Text>
 
                     {/* Settings Icon */}
-                     <TouchableOpacity onPress={() => navigation.navigate('SettingStack')}>
+                     <TouchableOpacity onPress={() => navigation.navigate('ExpertSettingsStack')}>
                       <Icon name="settings" size={26} color="#031501ff" />
                     </TouchableOpacity>
                 </View>

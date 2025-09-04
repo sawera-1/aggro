@@ -20,11 +20,12 @@
     "noAccount": "Don't have an account?",
     "signup": "Sign up"
   },
-  "farmerOtp": {
-    "title": "Enter OTP",
-    "subtitle": "We’ve sent a code to +XX XXXXXXXX",
+   "farmerOtp": {
+    "title": "Verify Your Phone",
+    "subtitle": "Enter the 4-digit OTP sent to your number",
     "confirm": "Confirm",
-    "back": "Back"
+    "verifying": "Verifying...",
+    "incompleteOtp": "Please enter all 4 digits"
   },
   "otpSuccess": {
     "title": "Success!",
@@ -341,6 +342,21 @@
     "readMore": "Read More"
   },
  "settings": {
+    "title": "Settings",
+        "name":"Sara",
+    "restartTitle": "Restart Required",
+    "restartMsg": "Please restart the app to apply changes.",
+    "chooseLanguage": "Choose Language",
+    "myAccount": "My Account",
+    "privacyPolicy": "Privacy Policy",
+    "language": "Language",
+    "feedback": "Feedback",
+    "logout": "Logout",
+    "logoutModalTitle": "Logout?",
+    "logoutModalMessage": "Are you sure you want to logout?",
+    "cancel": "Cancel"
+  },
+   "exsettings": {
     "title": "Settings",
         "name":"Sara",
     "restartTitle": "Restart Required",

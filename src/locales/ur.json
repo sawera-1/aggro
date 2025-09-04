@@ -22,11 +22,14 @@
     "signup": "اکاؤنٹ بنائیں"
   },
   "farmerOtp": {
-    "title": "او ٹی پی درج کریں",
-    "subtitle": "ہم نے ایک کوڈ XX XXXXXXXX+ پر بھیجا ہے",
+    "title": "اپنا فون نمبر تصدیق کریں",
+    "subtitle": "اپنے نمبر پر بھیجا گیا 4 ہندسوں کا کوڈ درج کریں",
     "confirm": "تصدیق کریں",
-    "back": "واپس"
-  },
+    "verifying": "تصدیق ہو رہی ہے...",
+    "incompleteOtp": "براہ کرم تمام 4 ہندسے درج کریں"
+  }
+
+,
   "otpSuccess": {
     "title": "کامیابی!",
     "subtitle": "آپ کا او ٹی پی کامیابی کے ساتھ تصدیق ہو گیا ہے۔",
@@ -343,6 +346,21 @@
     "readMore": "مزید پڑھیں"
   },
  "settings": {
+    "title": "ترتیبات",
+      "name":"سارہ",
+    "restartTitle": "دوبارہ شروع کرنے کی ضرورت ہے",
+    "restartMsg": "تبدیلیاں لاگو کرنے کے لیے ایپ دوبارہ شروع کریں۔",
+    "chooseLanguage": "زبان منتخب کریں",
+    "myAccount": "میرا اکاؤنٹ",
+    "privacyPolicy": "رازداری کی پالیسی",
+    "language": "زبان",
+    "feedback": "رائے",
+    "logout": "لاگ آؤٹ",
+    "logoutModalTitle": "لاگ آؤٹ؟",
+    "logoutModalMessage": "کیا آپ واقعی لاگ آؤٹ کرنا چاہتے ہیں؟",
+    "cancel": "منسوخ کریں"
+  },
+   "exsettings": {
     "title": "ترتیبات",
       "name":"سارہ",
     "restartTitle": "دوبارہ شروع کرنے کی ضرورت ہے",

@@ -1,10 +1,10 @@
 // navigation/ChatsStack.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ChatScreen from '../../Farmerpages/FarmerHomeScreens/Chat/FarmerChatpg';
+import ChatMsgScreen from '../../Farmerpages/FarmerHomeScreens/Chat/ChatMsgpg';
+import ChatDescription from '../../Farmerpages/FarmerHomeScreens/Chat/ChatDescriptionpg';
 
-import ChatDescription from '../Farmerpages/FarmerHomeScreens/Chat/ChatDescriptionpg';
-import ChatScreen from '../Farmerpages/FarmerHomeScreens/Chat/FarmerChatpg';
-import ChatMsgScreen from '../Farmerpages/FarmerHomeScreens/Chat/ChatMsgpg';
 
 
 const Stack = createNativeStackNavigator();

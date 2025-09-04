@@ -1,10 +1,9 @@
 // navigation/ChatsStack.js
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ExpertChat from '../Expertspages/ExpertHomeScreens/Chats/ExpertChatpg';
-import ExpertChatDes from '../Expertspages/ExpertHomeScreens/Chats/ExpertChatMsgDescriptionpg';
-import ExpertChatMsg from '../Expertspages/ExpertHomeScreens/Chats/ExpertChatMsgpg';
-
+import ExpertChat from '../../Expertspages/ExpertHomeScreens/Chats/ExpertChatpg';
+import ExpertChatMsg from '../../Expertspages/ExpertHomeScreens/Chats/ExpertChatMsgpg';
+import ExpertChatDes from '../../Expertspages/ExpertHomeScreens/Chats/ExpertChatMsgDescriptionpg';
 
 const Stack = createNativeStackNavigator();
 

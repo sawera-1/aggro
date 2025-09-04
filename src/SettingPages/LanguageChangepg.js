@@ -1,86 +1,74 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, SafeAreaView, ScrollView, ImageBackground } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { useTranslation } from 'react-i18next';
+import { SafeAreaView, ScrollView, Text, Image, TouchableOpacity, ImageBackground } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import i18next from '../i18n';
 
 const Languagepg = ({ navigation }) => {
-  const { t } = useTranslation();
-
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
         source={require('../images/background.jpg')}
         style={{ flex: 1 }}
-        imageStyle={{ resizeMode: 'cover', opacity: 0.9 }}
+        resizeMode="cover"
       >
-        {/* Top Bar */}
-        <View
+        {/* Back Button */}
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 15,
-            paddingVertical: 15,
+            position: 'absolute',
+            top: 50,
+            left: 20,
+            zIndex: 1,
             backgroundColor: '#006644',
+            padding: 10,
+            borderRadius: 50,
           }}
         >
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: 10 }}>
-            <Icon name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Image
-            source={require('../images/a.png')}
-            style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
-          />
-          <View>
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#fff' }}>
-              {t('languagePage.userName')}
-            </Text>
-            <Text style={{ color: '#fff', fontSize: 13 }}>
-              {t('languagePage.userPhone')}
-            </Text>
-          </View>
-        </View>
+          <Icon name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
 
-        {/* Main Content */}
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20 }}>
-          <Text
-            style={{
-              fontSize: 26,
-              fontWeight: 'bold',
-              marginBottom: 20,
-              color: '#006644',
-              borderRadius: 8,
-            }}
-          >
-            {t('languagePage.title')}
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+          }}
+        >
+          <Image source={require('../images/logodark.png')} style={{ width: 300, height: 100, marginBottom: 20 }} />
+          
+          <Text style={{ fontSize: 26, fontWeight: 'bold', marginBottom: 20, color: '#006644' }}>
+            Select Language
           </Text>
 
           <Image
             source={require('../images/farmer.png')}
-            style={{
-              width: 180,
-              height: 180,
-              resizeMode: 'contain',
-              marginBottom: 30,
-            }}
+            style={{ width: 180, height: 180, resizeMode: 'contain', marginBottom: 30 }}
           />
 
+          {/* English Button */}
           <TouchableOpacity
+            onPress={() => {
+              i18next.changeLanguage('en');
+            }}
             style={{
               backgroundColor: '#006644',
               height: 48,
               width: 200,
               borderRadius: 10,
-              marginBottom: 15,
               justifyContent: 'center',
               alignItems: 'center',
+              marginBottom: 15,
             }}
           >
-            <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: 'bold' }}>
-              {t('languagePage.english')}
-            </Text>
+            <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: 'bold' }}>English</Text>
           </TouchableOpacity>
 
+          {/* Urdu Button */}
           <TouchableOpacity
+            onPress={() => {
+              i18next.changeLanguage('ur');
+            }}
             style={{
               backgroundColor: '#006644',
               height: 48,
@@ -90,9 +78,7 @@ const Languagepg = ({ navigation }) => {
               alignItems: 'center',
             }}
           >
-            <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: 'bold' }}>
-              {t('languagePage.urdu')}
-            </Text>
+            <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: 'bold' }}>اردو</Text>
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>

@@ -20,7 +20,7 @@ import ExpertLogin from '../Expertspages/ExpertAuthenticationScreens/ExpertLogin
 import ExpertChangePassword from '../Expertspages/ExpertAuthenticationScreens/ForgetPasswordpg';
 import ExpertpasswordOtp from '../Expertspages/ExpertAuthenticationScreens/ExpertForgotpasswordotppg';
 import ExpertloginFailure from '../Expertspages/ExpertAuthenticationScreens/ExpertloginFailurepg';
-import ExpertBottomTabs from './ExpertBottomtab';
+import ExpertBottomTabs from './ExpertStackpages/ExpertBottomtab';
 import ExpertloginSuccess from '../Expertspages/ExpertAuthenticationScreens/ExpertLoginSuccesspg';
 
 

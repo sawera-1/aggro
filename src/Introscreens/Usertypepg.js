@@ -1,9 +1,31 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, View, Text, Image, TouchableOpacity, ImageBackground } from 'react-native';
+import {
+  SafeAreaView,
+  ScrollView,
+  Text,
+  Image,
+  TouchableOpacity,
+  ImageBackground
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useTranslation } from 'react-i18next'; 
+import { useTranslation } from 'react-i18next';
+import { useDispatch } from 'react-redux';
+import { setRole } from '../redux/Slices/HomeDataSlice';
+
 const UserType = ({ navigation }) => {
-  const { t } = useTranslation(); 
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+
+  const handleRoleSelect = (role) => {
+    dispatch(setRole(role)); // save role in Redux
+
+    if (role === "farmer") {
+      navigation.navigate("FarmerSignup");
+    } else if (role === "expert") {
+      navigation.navigate("ExpertSignup");
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
@@ -11,23 +33,21 @@ const UserType = ({ navigation }) => {
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-
         {/* Back Button */}
-                <TouchableOpacity
-                  onPress={() => navigation.goBack()}
-                  style={{
-                    position: 'absolute',
-                    top: 50,
-                    left: 20,
-                    zIndex: 1,
-                    backgroundColor: '#006644',
-                    padding: 10,
-                    borderRadius: 50,
-                  }}
-                >
-                  <Icon name="arrow-back" size={24} color="#fff" />
-                </TouchableOpacity>
-
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{
+            position: 'absolute',
+            top: 50,
+            left: 20,
+            zIndex: 1,
+            backgroundColor: '#006644',
+            padding: 10,
+            borderRadius: 50,
+          }}
+        >
+          <Icon name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
 
         <ScrollView
           contentContainerStyle={{
@@ -43,7 +63,7 @@ const UserType = ({ navigation }) => {
           />
 
           <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#006644', marginBottom: 30 }}>
-           {t("userType.title")}
+            {t("userType.title")}
           </Text>
 
           <Image
@@ -53,7 +73,7 @@ const UserType = ({ navigation }) => {
 
           {/* Farmer Button */}
           <TouchableOpacity
-            onPress={() => navigation.navigate('Farmersignup')}
+            onPress={() => handleRoleSelect("farmer")}
             style={{
               backgroundColor: '#006644',
               height: 48,
@@ -64,12 +84,14 @@ const UserType = ({ navigation }) => {
               marginBottom: 15,
             }}
           >
-            <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: 'bold' }}>{t("userType.farmer")}</Text>
+            <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: 'bold' }}>
+              {t("userType.farmer")}
+            </Text>
           </TouchableOpacity>
 
           {/* Expert Button */}
           <TouchableOpacity
-            onPress={() => navigation.navigate('ExpertSignup')}
+            onPress={() => handleRoleSelect("expert")}
             style={{
               backgroundColor: '#006644',
               height: 48,
@@ -79,7 +101,9 @@ const UserType = ({ navigation }) => {
               alignItems: 'center',
             }}
           >
-            <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: 'bold' }}>{t("userType.expert")}</Text>
+            <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: 'bold' }}>
+              {t("userType.expert")}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>

@@ -3,11 +3,12 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-
 import ChannelStack from './ChannelStack';
 import ChatsStack from './ChatStack';
+import AIChatScreen from '../../Farmerpages/FarmerHomeScreens/FarmerAipg';
 import UpdatesStack from './UpdateStack';
-import AIChatScreen from '../Farmerpages/FarmerHomeScreens/FarmerAipg';
+
+
 
 const Tab = createBottomTabNavigator();
 

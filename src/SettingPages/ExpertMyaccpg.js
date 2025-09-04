@@ -42,7 +42,7 @@ export default function ExpertMyAcc({ navigation }) {
             <Icon name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
           <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#fff' }}>
-            {t('expertMyAccount.myAccount')}
+            {t('expertMyaccount.myAccount')}
           </Text>
           <View style={{ width: 26 }} />
         </View>
@@ -70,17 +70,17 @@ export default function ExpertMyAcc({ navigation }) {
               }}
             >
               <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#006644' }}>
-                {t('expertMyAccount.edit')}
+                {t('expertMyaccount.edit')}
               </Text>
             </TouchableOpacity>
           </View>
 
           {/* Name */}
           <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#006644', marginBottom: 5 }}>
-            {t('expertMyAccount.name')}
+            {t('expertMyaccount.name')}
           </Text>
           <TextInput
-            placeholder={t('expertMyAcc.enterName')}
+            placeholder={t('expertMyaccount.enterName')}
             value={name}
             onChangeText={setName}
             style={{
@@ -96,10 +96,10 @@ export default function ExpertMyAcc({ navigation }) {
 
           {/* Phone */}
           <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#006644', marginBottom: 5 }}>
-            {t('expertMyAccount.phoneNumber')}
+            {t('expertMyaccount.phoneNumber')}
           </Text>
           <TextInput
-            placeholder={t('expertMyAccount.enterPhone')}
+            placeholder={t('expertMyaccount.enterPhone')}
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
@@ -116,10 +116,10 @@ export default function ExpertMyAcc({ navigation }) {
 
           {/* Qualification */}
           <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#006644', marginBottom: 5 }}>
-            {t('expertMyAccount.qualification')}
+            {t('expertMyaccount.qualification')}
           </Text>
           <TextInput
-            placeholder={t('expertMyAccount.enterQualification')}
+            placeholder={t('expertMyaccount.enterQualification')}
             value={qualification}
             onChangeText={setQualification}
             style={{
@@ -135,10 +135,10 @@ export default function ExpertMyAcc({ navigation }) {
 
           {/* Specialization */}
           <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#006644', marginBottom: 5 }}>
-            {t('expertMyAccount.specialization')}
+            {t('expertMyaccount.specialization')}
           </Text>
           <TextInput
-            placeholder={t('expertMyAccount.enterSpecialization')}
+            placeholder={t('expertMyaccount.enterSpecialization')}
             value={specialization}
             onChangeText={setSpecialization}
             style={{
@@ -154,10 +154,10 @@ export default function ExpertMyAcc({ navigation }) {
 
           {/* Experience */}
           <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#006644', marginBottom: 5 }}>
-            {t('expertMyAccount.experience')}
+            {t('expertMyaccount.experience')}
           </Text>
           <TextInput
-            placeholder={t('expertMyAccount.enterExperience')}
+            placeholder={t('expertMyaccount.enterExperience')}
             value={experience}
             onChangeText={setExperience}
             keyboardType="numeric"
@@ -183,7 +183,7 @@ export default function ExpertMyAcc({ navigation }) {
             }}
           >
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-              {t('expertMyAccount.save')}
+              {t('expertMyaccount.save')}
             </Text>
           </TouchableOpacity>
         </ScrollView>

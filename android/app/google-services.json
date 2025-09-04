@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "119693675733",
+    "project_id": "agriculture-assistant-bae3f",
+    "storage_bucket": "agriculture-assistant-bae3f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:119693675733:android:5ca40daeef9ae58021265c",
+        "android_client_info": {
+          "package_name": "com.aggro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBK9aiYvfy88PlXwAWfDcYLiY41v7M1ww0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

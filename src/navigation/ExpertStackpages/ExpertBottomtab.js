@@ -3,11 +3,12 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-
 import ExpertChannelStack from './ExpertChannelStack';
-import ExpertAI from '../Expertspages/ExpertHomeScreens/ExpertAipg';
 import ExpertChatStack from './ExpertChatStack';
 import ExpertUpdateStack from './ExpertUpdateStack';
+import ExpertAI from '../../Expertspages/ExpertHomeScreens/ExpertAipg';
+
+
 
 const Tab = createBottomTabNavigator();
 
