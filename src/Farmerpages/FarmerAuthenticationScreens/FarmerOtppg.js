@@ -9,32 +9,30 @@ import {
   ScrollView,
   ImageBackground,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import NumericPad from '../../Components/Numericpad';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-import { useSelector, useDispatch } from 'react-redux';
-import { verifyOtpAndSaveUser } from '../../Helper/firebaseHelper';
+import { useDispatch } from 'react-redux';
 import { setUser } from '../../redux/Slices/HomeDataSlice';
 
-const FarmerOtp = ({ navigation }) => {
+const FarmerOtp = ({ navigation, route }) => {
+  const { confirmation, phone } = route.params;
   const { t } = useTranslation();
-  const [otp, setOtp] = useState(['', '', '', '']);
+  const dispatch = useDispatch();
+
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const confirmation = useSelector((state) => state.home.confirmation);
-  const dispatch = useDispatch();
-
   const handlePress = (num) => {
-    if (currentIndex < 4) {
+    if (currentIndex < 6) {
       const newOtp = [...otp];
       newOtp[currentIndex] = num;
       setOtp(newOtp);
       setCurrentIndex(currentIndex + 1);
 
-      // Auto-submit when OTP completed
-      if (newOtp.join('').length === 4) {
+      if (currentIndex + 1 === 6) {
         handleConfirm(newOtp.join(''));
       }
     }
@@ -51,23 +49,19 @@ const FarmerOtp = ({ navigation }) => {
 
   const handleConfirm = async (codeFromAuto = null) => {
     const code = codeFromAuto || otp.join('');
-
-    if (code.length < 4) {
-      alert(t('farmerOtp.incompleteOtp'));
+    if (code.length < 6) {
+      Alert.alert('Error', 'Enter full OTP');
       return;
     }
 
     try {
       setLoading(true);
-      const userData = await verifyOtpAndSaveUser(confirmation, code, {
-        role: 'farmer',
-      });
-
-      dispatch(setUser(userData));
-      navigation.replace('OtpSuccess'); // ✅ success
+      const userCredential = await confirmation.confirm(code);
+      dispatch(setUser(userCredential.user));
+      navigation.replace('OtpSuccess');
     } catch (error) {
       console.error('OTP verification failed:', error.message);
-      navigation.replace('OtpFailure'); // ❌ failure
+      navigation.replace('OtpFailure');
     } finally {
       setLoading(false);
     }
@@ -80,22 +74,6 @@ const FarmerOtp = ({ navigation }) => {
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{
-            position: 'absolute',
-            top: 50,
-            left: 20,
-            zIndex: 1,
-            backgroundColor: '#006644',
-            padding: 10,
-            borderRadius: 50,
-          }}
-        >
-          <Icon name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
@@ -104,13 +82,11 @@ const FarmerOtp = ({ navigation }) => {
             padding: 20,
           }}
         >
-          {/* Logo */}
           <Image
             source={require('../../images/logodark.png')}
             style={{ width: 200, height: 100, marginBottom: 20 }}
           />
 
-          {/* Heading */}
           <Text
             style={{
               fontSize: 20,
@@ -127,31 +103,73 @@ const FarmerOtp = ({ navigation }) => {
           </Text>
 
           {/* OTP Boxes */}
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-evenly',
-              marginBottom: 30,
-              width: '80%',
-            }}
-          >
-            {otp.map((digit, index) => (
-              <TextInput
-                key={index}
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#ccc',
-                  borderRadius: 8,
-                  width: 50,
-                  height: 50,
-                  textAlign: 'center',
-                  fontSize: 18,
-                  backgroundColor: '#fff',
-                }}
-                value={digit}
-                editable={false}
-              />
-            ))}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 30 }}>
+            <TextInput style={{
+              borderWidth: 1,
+              borderColor: '#ccc',
+              borderRadius: 8,
+              width: 50,
+              height: 50,
+              textAlign: 'center',
+              fontSize: 18,
+              backgroundColor: '#fff',
+              marginHorizontal: 3,
+            }} value={otp[0]} editable={false} />
+            <TextInput style={{
+              borderWidth: 1,
+              borderColor: '#ccc',
+              borderRadius: 8,
+              width: 50,
+              height: 50,
+              textAlign: 'center',
+              fontSize: 18,
+              backgroundColor: '#fff',
+              marginHorizontal: 3,
+            }} value={otp[1]} editable={false} />
+            <TextInput style={{
+              borderWidth: 1,
+              borderColor: '#ccc',
+              borderRadius: 8,
+              width: 50,
+              height: 50,
+              textAlign: 'center',
+              fontSize: 18,
+              backgroundColor: '#fff',
+              marginHorizontal: 3,
+            }} value={otp[2]} editable={false} />
+            <TextInput style={{
+              borderWidth: 1,
+              borderColor: '#ccc',
+              borderRadius: 8,
+              width: 50,
+              height: 50,
+              textAlign: 'center',
+              fontSize: 18,
+              backgroundColor: '#fff',
+              marginHorizontal: 3,
+            }} value={otp[3]} editable={false} />
+            <TextInput style={{
+              borderWidth: 1,
+              borderColor: '#ccc',
+              borderRadius: 8,
+              width: 50,
+              height: 50,
+              textAlign: 'center',
+              fontSize: 18,
+              backgroundColor: '#fff',
+              marginHorizontal: 3,
+            }} value={otp[4]} editable={false} />
+            <TextInput style={{
+              borderWidth: 1,
+              borderColor: '#ccc',
+              borderRadius: 8,
+              width: 50,
+              height: 50,
+              textAlign: 'center',
+              fontSize: 18,
+              backgroundColor: '#fff',
+              marginHorizontal: 3,
+            }} value={otp[5]} editable={false} />
           </View>
 
           {/* Numeric Pad */}
@@ -187,5 +205,8 @@ const FarmerOtp = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
+
+
 
 export default FarmerOtp;

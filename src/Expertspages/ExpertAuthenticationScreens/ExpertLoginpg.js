@@ -1,14 +1,46 @@
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, Image, ImageBackground } from 'react-native';
+import { 
+  SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, Image, ImageBackground, Alert 
+} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
+import { useDispatch } from 'react-redux';
+import { getExpertByPhoneAndPassword } from '../../Helper/firebaseHelper';
+import { setUser } from '../../redux/Slices/HomeDataSlice';
 
 const ExpertLogin = ({ navigation }) => {
   const { t } = useTranslation();
-  const [name, setName] = useState('');
+  const dispatch = useDispatch();
+
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!phoneNumber || !password) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const userData = await getExpertByPhoneAndPassword(phoneNumber, password);
+
+      if (!userData) {
+      navigation.replace('ExpertloginFailure');
+        return;
+      }
+
+      dispatch(setUser(userData));
+      navigation.replace('ExpertloginSuccess');
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -17,23 +49,6 @@ const ExpertLogin = ({ navigation }) => {
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{
-            position: 'absolute',
-            top: 50,
-            left: 20,
-            zIndex: 1,
-            backgroundColor: '#006644',
-            padding: 10,
-            borderRadius: 50,
-          }}
-        >
-          <Icon name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-
-
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
@@ -53,11 +68,12 @@ const ExpertLogin = ({ navigation }) => {
             {t('expertLogin.title')}
           </Text>
 
-          {/* Name */}
+          {/* Phone Number */}
           <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder={t('expertLogin.fullName')}
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            placeholder="Phone Number"
+            keyboardType="phone-pad"
             placeholderTextColor="#006644"
             style={{
               borderColor: '#006644',
@@ -72,6 +88,7 @@ const ExpertLogin = ({ navigation }) => {
               marginBottom: 15,
             }}
           />
+
           {/* Password */}
           <View
             style={{
@@ -90,7 +107,7 @@ const ExpertLogin = ({ navigation }) => {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder={t('expertLogin.password')}
+              placeholder="Password"
               placeholderTextColor="#006644"
               secureTextEntry={!showPassword}
               style={{ flex: 1, fontSize: 16, color: '#006644' }}
@@ -106,14 +123,16 @@ const ExpertLogin = ({ navigation }) => {
 
           {/* Login Button */}
           <TouchableOpacity
-            onPress={() => navigation.navigate('ExpertloginSuccess')}
+            onPress={handleLogin}
             style={{
               width: '100%',
               borderRadius: 10,
               backgroundColor: '#006644',
               alignItems: 'center',
               marginBottom: 15,
+              opacity: loading ? 0.6 : 1,
             }}
+            disabled={loading}
           >
             <Text
               style={{
@@ -123,18 +142,27 @@ const ExpertLogin = ({ navigation }) => {
                 fontWeight: 'bold',
               }}
             >
-              {t('expertLogin.login')}
+              {loading ? 'Logging in...' : t('expertLogin.login')}
             </Text>
           </TouchableOpacity>
 
           {/* Forgot Password */}
-          <TouchableOpacity onPress={() => navigation.navigate('ExpertpasswordOtp')}>
-            <Text style={{ color: '#006644', marginBottom: 20, fontSize: 16 }}>
-              {t('expertLogin.forgotPassword')}
-            </Text>
-          </TouchableOpacity>
+         <TouchableOpacity
+  onPress={() => {
+    if (!phoneNumber) {
+      Alert.alert('Error', 'Please enter your phone number first');
+      return;
+    }
+    navigation.navigate('ExpertpasswordOtp', { phone: phoneNumber });
+  }}
+>
+  <Text style={{ color: '#006644', marginBottom: 20, fontSize: 16 }}>
+    {t('expertLogin.forgotPassword')}
+  </Text>
+</TouchableOpacity>
 
-          {/* signup */}
+
+          {/* Signup */}
           <Text style={{ color: '#006644' }}>
             {t('expertLogin.noAccount')}{' '}
             <Text

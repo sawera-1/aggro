@@ -3,7 +3,6 @@ import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar, View, Platform } from "react-native";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-
 import { store, persistor } from "./src/redux/Store/index"; 
 import FarmerStack from "./src/navigation/FarmerStack";
 import ExpertStack from "./src/navigation/ExpertStack";
@@ -15,7 +14,7 @@ import { useSelector } from "react-redux";
 const RootNavigator = () => {
   const role = useSelector((state) => state.home.role);
 
-  switch (role) {
+  switch (role) {//chng into role after cheakin
     case "farmer":
       return <FarmerStack />;
     case "expert":

@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, SafeAreaView, ScrollView, ImageBackground } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, SafeAreaView, ScrollView, ImageBackground, Alert, ActivityIndicator } from 'react-native';
 import NumericPad from '../../Components/Numericpad';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-const ExpertpasswordOtp = ({ navigation }) => {
-  const [otp, setOtp] = useState(['', '', '', '']);
+
+const ExpertpasswordOtp = ({ navigation, route }) => {
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [showPad, setShowPad] = useState(true);
-const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+
+  // ✅ Get phone + confirmation from params
+  const { phone, confirmation } = route.params || {};
+
   const handlePress = (num) => {
     const newOtp = [...otp];
     const index = newOtp.findIndex((val) => val === '');
@@ -25,6 +31,27 @@ const { t } = useTranslation();
     }
   };
 
+  // ✅ Confirm OTP with Firebase
+  const handleConfirmOtp = async () => {
+    const code = otp.join('');
+    if (code.length < 6) {
+      Alert.alert('Error', 'Please enter the full OTP');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await confirmation.confirm(code); // 🔑 Firebase verification
+      // If success → go to Change Password
+      navigation.replace('ExpertChangePassword', { phone });
+    } catch (error) {
+      console.log('OTP verification failed:', error);
+      Alert.alert('Error', 'Invalid OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
@@ -32,22 +59,16 @@ const { t } = useTranslation();
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-         {/* Back Button */}
-                <TouchableOpacity
-                  onPress={() => navigation.goBack()}
-                  style={{
-                    position: 'absolute',
-                    top: 50,
-                    left: 20,
-                    zIndex: 1,
-                    backgroundColor: '#006644',
-                    padding: 10,
-                    borderRadius: 50,
-                  }}
-                >
-                  <Icon name="arrow-back" size={24} color="#fff" />
-                </TouchableOpacity>
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+
+
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+          }}
+        >
           {/* Logo */}
           <Image
             source={require('../../images/logodark.png')}
@@ -58,71 +79,116 @@ const { t } = useTranslation();
           <Text style={{ fontSize: 20, fontWeight: '600', color: '#000', textAlign: 'center', marginBottom: 8 }}>
             {t('expertpasswordOtp.title')}
           </Text>
-          <Text style={{ color: '#555', textAlign: 'center', marginBottom: 30 }}>
-             {t('expertpasswordOtp.subtitle')}
-          </Text>
+
+          {/* ✅ Show phone number */}
+          {phone && (
+            <Text style={{ color: '#006644', fontWeight: '500', marginBottom: 20 }}>
+              {t('expertpasswordOtp.subtitle')} {phone}
+            </Text>
+          )}
 
           {/* OTP Boxes */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', marginBottom: 30, width: '80%' }}>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 8,
-                width: 50,
-                height: 50,
-                textAlign: 'center',
-                fontSize: 18,
-                backgroundColor: '#fff',
-              }}
-              value={otp[0]}
-              editable={false}
-            />
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 8,
-                width: 50,
-                height: 50,
-                textAlign: 'center',
-                fontSize: 18,
-                backgroundColor: '#fff',
-              }}
-              value={otp[1]}
-              editable={false}
-            />
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 8,
-                width: 50,
-                height: 50,
-                textAlign: 'center',
-                fontSize: 18,
-                backgroundColor: '#fff',
-              }}
-              value={otp[2]}
-              editable={false}
-            />
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 8,
-                width: 50,
-                height: 50,
-                textAlign: 'center',
-                fontSize: 18,
-                backgroundColor: '#fff',
-              }}
-              value={otp[3]}
-              editable={false}
-            />
-          </View>
-
-          {/* Numeric Pad Component */}
+         
+                   <View
+                     style={{
+                       flexDirection: 'row',
+                       justifyContent: 'center',
+                       marginBottom: 30,
+                     }}
+                   >
+                     <TextInput
+                       style={{
+                         borderWidth: 1,
+                         borderColor: '#ccc',
+                         borderRadius: 8,
+                         width: 50,
+                         height: 50,
+                         textAlign: 'center',
+                         fontSize: 18,
+                         backgroundColor: '#fff',
+                         marginHorizontal: 1,
+                       }}
+                       value={otp[0]}
+                       editable={false}
+                     />
+                     <TextInput
+                       style={{
+                         borderWidth: 1,
+                         borderColor: '#ccc',
+                         borderRadius: 8,
+                         width: 50,
+                         height: 50,
+                         textAlign: 'center',
+                         fontSize: 18,
+                         backgroundColor: '#fff',
+                         marginHorizontal: 1,
+                       }}
+                       value={otp[1]}
+                       editable={false}
+                     />
+                     <TextInput
+                       style={{
+                         borderWidth: 1,
+                         borderColor: '#ccc',
+                         borderRadius: 8,
+                         width: 50,
+                         height: 50,
+                         textAlign: 'center',
+                         fontSize: 18,
+                         backgroundColor: '#fff',
+                         marginHorizontal: 1,
+                       }}
+                       value={otp[2]}
+                       editable={false}
+                     />
+                     <TextInput
+                       style={{
+                         borderWidth: 1,
+                         borderColor: '#ccc',
+                         borderRadius: 8,
+                         width: 50,
+                         height: 50,
+                         textAlign: 'center',
+                         fontSize: 18,
+                         backgroundColor: '#fff',
+                         marginHorizontal: 1,
+                       }}
+                       value={otp[3]}
+                       editable={false}
+                     />
+                     <TextInput
+                       style={{
+                         borderWidth: 1,
+                         borderColor: '#ccc',
+                         borderRadius: 8,
+                         width: 50,
+                         height: 50,
+                         textAlign: 'center',
+                         fontSize: 18,
+                         backgroundColor: '#fff',
+                         marginHorizontal: 1,
+                       }}
+                       value={otp[4]}
+                       editable={false}
+                     />
+                     <TextInput
+                       style={{
+                         borderWidth: 1,
+                         borderColor: '#ccc',
+                         borderRadius: 8,
+                         width: 50,
+                         height: 50,
+                         textAlign: 'center',
+                         fontSize: 18,
+                         backgroundColor: '#fff',
+                         marginHorizontal: 1,
+                       }}
+                       value={otp[5]}
+                       editable={false}
+                     />
+                   </View>
+         
+          {/* Numeric Pad */}
           {showPad && (
             <NumericPad
               onPressNumber={handlePress}
@@ -140,10 +206,17 @@ const { t } = useTranslation();
               alignItems: 'center',
               width: '60%',
               marginTop: 20,
+              flexDirection: 'row',
+              justifyContent: 'center',
             }}
-            onPress={() => navigation.navigate('ExpertChangePassword')}
+            onPress={handleConfirmOtp}
+            disabled={loading}
           >
-            <Text style={{ color: '#fff', fontSize: 16 }}>{t('expertpasswordOtp.confirm')}</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: '#fff', fontSize: 16 }}>{t('expertpasswordOtp.confirm')}</Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>

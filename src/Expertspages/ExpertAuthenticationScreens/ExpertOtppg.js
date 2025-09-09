@@ -1,28 +1,68 @@
+// ExpertOtp.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, SafeAreaView, ScrollView, ImageBackground } from 'react-native';
+import { SafeAreaView, ScrollView, View, Text, TouchableOpacity, Image, ImageBackground, Alert } from 'react-native';
 import NumericPad from '../../Components/Numericpad';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-const ExpertOtp = ({ navigation }) => {
-    const { t } = useTranslation();
-  const [otp, setOtp] = useState(['', '', '', '']);
-  const [showPad, setShowPad] = useState(true);
+import { expertverifyOtpAndSignUp } from '../../Helper/firebaseHelper';
+import { useSelector, useDispatch } from 'react-redux';
+import { setUser } from '../../redux/Slices/HomeDataSlice';
+
+const ExpertOtp = ({ navigation, route }) => {
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const confirmation = useSelector((state) => state.home.confirmation);
+
+  const { phone, expertData } = route.params;
+
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const handlePress = (num) => {
-    const newOtp = [...otp];
-    const index = newOtp.findIndex((val) => val === '');
-    if (index !== -1) {
-      newOtp[index] = num;
+    if (currentIndex < 6) {
+      const newOtp = [...otp];
+      newOtp[currentIndex] = num;
       setOtp(newOtp);
+      setCurrentIndex(currentIndex + 1);
+
+      if (newOtp.join('').length === 6) {
+        handleConfirm(newOtp.join(''));
+      }
     }
   };
 
   const handleBackspace = () => {
-    const newOtp = [...otp];
-    const index = newOtp.findLastIndex((val) => val !== '');
-    if (index !== -1) {
-      newOtp[index] = '';
+    if (currentIndex > 0) {
+      const newOtp = [...otp];
+      newOtp[currentIndex - 1] = '';
       setOtp(newOtp);
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleConfirm = async (codeFromAuto = null) => {
+    const code = codeFromAuto || otp.join('');
+    if (code.length < 6) {
+      Alert.alert('Error', 'Please enter full OTP');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const userData = await expertverifyOtpAndSignUp(
+        confirmation,
+        code,
+        { ...expertData, phone }
+      );
+
+      dispatch(setUser(userData));
+      navigation.replace('EOtpSuccess');
+    } catch (error) {
+      console.error('OTP verification failed:', error);
+      navigation.replace('EOtpFailure');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,121 +73,39 @@ const ExpertOtp = ({ navigation }) => {
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-        {/* Back Button  */}
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{
-            position: 'absolute',
-            top: 50,
-            left: 20,
-            zIndex: 1,
-            backgroundColor: '#006644',
-            padding: 10,
-            borderRadius: 50,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
-          }}
-        >
-          <Icon name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          {/* Logo */}
-          <Image
-            source={require('../../images/logodark.png')}
-            style={{ width: 200, height: 100, marginBottom: 20 }}
-          />
-
-          {/* Heading */}
-          <Text style={{ fontSize: 20, fontWeight: '600', color: '#000', textAlign: 'center', marginBottom: 8 }}>
-             {t('expertOtp.title')}
-          </Text>
-          <Text style={{ color: '#555', textAlign: 'center', marginBottom: 30 }}>
-           {t('expertOtp.subtitle')}
+          <Text style={{ fontSize: 20, fontWeight: '600', color: '#000', marginBottom: 30 }}>
+            {t('expertOtp.title')}
           </Text>
 
-          {/* OTP Boxes */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', marginBottom: 30, width: '80%' }}>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 8,
-                width: 50,
-                height: 50,
-                textAlign: 'center',
-                fontSize: 18,
-                backgroundColor: '#fff',
-              }}
-              value={otp[0]}
-              editable={false}
-            />
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 8,
-                width: 50,
-                height: 50,
-                textAlign: 'center',
-                fontSize: 18,
-                backgroundColor: '#fff',
-              }}
-              value={otp[1]}
-              editable={false}
-            />
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 8,
-                width: 50,
-                height: 50,
-                textAlign: 'center',
-                fontSize: 18,
-                backgroundColor: '#fff',
-              }}
-              value={otp[2]}
-              editable={false}
-            />
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 8,
-                width: 50,
-                height: 50,
-                textAlign: 'center',
-                fontSize: 18,
-                backgroundColor: '#fff',
-              }}
-              value={otp[3]}
-              editable={false}
-            />
+          {/* OTP boxes without .map */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 30 }}>
+            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+              {otp[0]}
+            </Text>
+            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+              {otp[1]}
+            </Text>
+            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+              {otp[2]}
+            </Text>
+            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+              {otp[3]}
+            </Text>
+            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+              {otp[4]}
+            </Text>
+            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+              {otp[5]}
+            </Text>
           </View>
 
-          {/* Numeric Pad Component */}
-          {showPad && (
-            <NumericPad
-              onPressNumber={handlePress}
-              onBackspace={handleBackspace}
-              onSubmit={() => setShowPad(false)}
-            />
-          )}
+          {/* Numeric Pad */}
+          <NumericPad onPressNumber={handlePress} onBackspace={handleBackspace} />
 
-          {/* Confirm Button */}
           <TouchableOpacity
-            style={{
-              backgroundColor: '#006644',
-              padding: 15,
-              borderRadius: 8,
-              alignItems: 'center',
-              width: '60%',
-              marginTop: 20,
-            }}
-            onPress={() => navigation.navigate('EOtpSuccess')}
+            onPress={() => handleConfirm()}
+            style={{ backgroundColor: '#006644', padding: 15, borderRadius: 8, alignItems: 'center', width: '60%', marginTop: 20 }}
           >
             <Text style={{ color: '#fff', fontSize: 16 }}>{t('expertOtp.confirm')}</Text>
           </TouchableOpacity>

@@ -22,10 +22,10 @@
   },
    "farmerOtp": {
     "title": "Verify Your Phone",
-    "subtitle": "Enter the 4-digit OTP sent to your number",
+    "subtitle": "Enter the 6-digit OTP sent to your number",
     "confirm": "Confirm",
     "verifying": "Verifying...",
-    "incompleteOtp": "Please enter all 4 digits"
+    "incompleteOtp": "Please enter all 6 digits"
   },
   "otpSuccess": {
     "title": "Success!",
@@ -179,7 +179,7 @@
   },
 "expertpasswordOtp": {
     "title": "Enter OTP",
-    "subtitle": "We have sent a code to +XX XXXXXXXX",
+    "subtitle": "We have sent a code to",
     "confirm": "Confirm"
   },
   "otploginFailure": {

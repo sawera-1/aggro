@@ -8,11 +8,15 @@ import {
   TouchableOpacity,
   Image,
   ImageBackground,
+  Alert,
 } from 'react-native';
 import CountryPicker from 'react-native-country-picker-modal';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
+import { expertsendOtp } from '../../Helper/firebaseHelper';
+import { useRoute } from '@react-navigation/native';
+import { useDispatch } from 'react-redux'; 
+import { setConfirmation } from '../../redux/Slices/HomeDataSlice';
 
 const ExpertSignup = ({ navigation }) => {
   const { t } = useTranslation();
@@ -25,6 +29,47 @@ const ExpertSignup = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [countryCode, setCountryCode] = useState('PK');
   const [callingCode, setCallingCode] = useState('92');
+  const dispatch = useDispatch(); 
+  
+const handleContinue = async () => {
+  if (!name || !qualification || !specialization || !experience || !phone) {
+    Alert.alert('Error', 'Please fill all fields');
+    return;
+  }
+
+  if (!phone.match(/^\d{10,}$/)) {
+    Alert.alert('Invalid Phone', 'Please enter a valid phone number');
+    return;
+  }
+
+  if (!password || password.length < 6) {
+    Alert.alert('Invalid Password', 'Password must be at least 6 characters');
+    return;
+  }
+
+  try {
+    const fullPhone = `+${callingCode}${phone}`;
+    const verificationId = await expertsendOtp(fullPhone);
+
+    // store in Redux
+    dispatch(setConfirmation(verificationId));
+
+    navigation.navigate('ExpertOtp', {
+      phone: fullPhone,
+      expertData: {
+        name,
+        qualification,
+        specialization,
+        experience,
+        password,
+        role: 'expert',
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Error', 'Failed to send OTP. Please try again.');
+  }
+};
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -33,23 +78,6 @@ const ExpertSignup = ({ navigation }) => {
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{
-            position: 'absolute',
-            top: 50,
-            left: 20,
-            zIndex: 1,
-            backgroundColor: '#006644',
-            padding: 10,
-            borderRadius: 50,
-          }}
-        >
-          <Icon name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-
-
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
@@ -65,14 +93,7 @@ const ExpertSignup = ({ navigation }) => {
           />
 
           {/* Title */}
-          <Text
-            style={{
-              fontSize: 28,
-              fontWeight: 'bold',
-              color: '#006644',
-              marginBottom: 10,
-            }}
-          >
+          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#006644', marginBottom: 10 }}>
             {t('expertSignup.title')}
           </Text>
           <Text style={{ fontSize: 14, color: '#006644', marginBottom: 30 }}>
@@ -233,7 +254,7 @@ const ExpertSignup = ({ navigation }) => {
 
           {/* Continue Button */}
           <TouchableOpacity
-            onPress={() => navigation.navigate('ExpertOtp')}
+            onPress={handleContinue}
             style={{
               width: '100%',
               borderRadius: 10,
@@ -254,7 +275,7 @@ const ExpertSignup = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
 
-          {/* login */}
+          {/* Login Redirect */}
           <Text style={{ color: '#006644' }}>
             {t('expertSignup.alreadyAccount')}{' '}
             <Text

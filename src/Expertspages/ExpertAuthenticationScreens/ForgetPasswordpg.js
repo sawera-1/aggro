@@ -1,18 +1,53 @@
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, ImageBackground, Image, Alert } from 'react-native';
+import { 
+  SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, ImageBackground, Image, Alert 
+} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
+import { firestore } from '../../firebase'; // Make sure firestore is imported
 
-const ExpertChangePassword = ({ navigation }) => {
+const ExpertChangePassword = ({ navigation, route }) => {
+  const { t } = useTranslation();
+  const { phone } = route.params; // get phone from OTP screen
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const { t } = useTranslation();
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
 
+    try {
+      // Find user by phone number
+      const snapshot = await firestore()
+        .collection('users')
+        .where('phoneNumber', '==', phone)
+        .get();
 
+      if (snapshot.empty) {
+        Alert.alert('Error', 'User not found');
+        return;
+      }
+
+      // Update password
+      const docId = snapshot.docs[0].id;
+      await firestore().collection('users').doc(docId).update({ password: newPassword });
+
+      Alert.alert('Success', 'Password updated successfully');
+      navigation.replace('ExpertBottomTabs'); // Navigate to home or login
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to update password');
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -21,37 +56,12 @@ const ExpertChangePassword = ({ navigation }) => {
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-        {/* Back Button */}
-               <TouchableOpacity
-                 onPress={() => navigation.goBack()}
-                 style={{
-                   position: 'absolute',
-                   top: 50,
-                   left: 20,
-                   zIndex: 1,
-                   backgroundColor: '#006644',
-                   padding: 10,
-                   borderRadius: 50,
-                 }}
-               >
-                 <Icon name="arrow-back" size={24} color="#fff" />
-               </TouchableOpacity>
-
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 20,
-          }}
-        >
-          {/* Logo */}
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
           <Image
             source={require('../../images/logodark.png')}
             style={{ width: 250, height: 80, marginBottom: 30 }}
           />
 
-          {/* Title */}
           <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#006644', marginBottom: 30 }}>
             {t('changePassword.title')}
           </Text>
@@ -122,7 +132,7 @@ const ExpertChangePassword = ({ navigation }) => {
 
           {/* Submit Button */}
           <TouchableOpacity
-            onPress={() => navigation.navigate('ExpertBottomTabs')}
+            onPress={handleResetPassword}
             style={{
               width: '100%',
               borderRadius: 10,

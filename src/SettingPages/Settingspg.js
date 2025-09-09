@@ -287,3 +287,4 @@ export default function SettingsScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+

@@ -1,13 +1,14 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Farmersignup from "../Farmerpages/FarmerAuthenticationScreens/FarmerSignuppg";
-import FarmerOtp from "../Farmerpages/FarmerAuthenticationScreens/FarmerOtppg";
-import FarmerLogin from "../Farmerpages/FarmerAuthenticationScreens/Farmerloginpg";
+
 import OtpSuccess from "../Farmerpages/FarmerAuthenticationScreens/OtpSuccesspg";
 import OtpFailure from "../Farmerpages/FarmerAuthenticationScreens/OtpFailurepg";
 import FeedbackPage from "../SettingPages/Feedbackpg";
 import SettingsStack from "./FarmerStackpages/SettingsStack";
 import BottomTabs from "./FarmerStackpages/Bottomtab";
+import FarmerLogin from "../Farmerpages/FarmerAuthenticationScreens/Farmerloginpg";
+import FarmerOtp from "../Farmerpages/FarmerAuthenticationScreens/FarmerOtppg";
 
 const Stack = createNativeStackNavigator();
 

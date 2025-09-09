@@ -1,180 +1,177 @@
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, Image, ImageBackground } from 'react-native';
-import CountryPicker from 'react-native-country-picker-modal';
-import NumericPad from '../../Components/Numericpad';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useTranslation } from 'react-i18next';  
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  Image,
+  ImageBackground,
+  ScrollView,
+  Alert,
+  TextInput,
+} from "react-native";
+import { useTranslation } from "react-i18next";
+import CountryPicker from "react-native-country-picker-modal";
+import { sendOtp } from "../../Helper/firebaseHelper";
+import NumericPad from "../../Components/Numericpad"; // ✅ make sure path is correct
 
-//redux and signup 
-import { sendOtp } from "../../Helper/firebaseHelper";  
-import { useDispatch } from "react-redux";
-import { setConfirmation } from "../../redux/Slices/HomeDataSlice"; 
+const FarmerSignup = ({ navigation }) => {
+  const { t } = useTranslation();
+  const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("PK");
+  const [callingCode, setCallingCode] = useState("92");
+  const [showPad, setShowPad] = useState(false);
 
-const Farmersignup = ({ navigation }) => {
-    const { t } = useTranslation(); 
+  // numeric pad handlers
+  const handlePress = (num) => {
+    if (phone.length < 11) setPhone((prev) => prev + num);
+  };
 
-    const [phone, setPhone] = useState('');
-    const [showPad, setShowPad] = useState(false);
-    const [countryCode, setCountryCode] = useState('PK');
-    const [callingCode, setCallingCode] = useState('92');
+  const handleBackspace = () => {
+    setPhone((prev) => prev.slice(0, -1));
+  };
 
-
-    //logic of redux 
-    const dispatch = useDispatch();
-
-const handleContinue = async () => {
-  try {
+  const handleSignup = async () => {
     if (!phone) {
-      alert("Please enter a phone number");
+      Alert.alert("Error", "Please enter a valid phone number");
       return;
     }
 
-    const fullPhone = `+${callingCode}${phone}`;
-    const confirmation = await sendOtp(fullPhone);
+    try {
+      const fullPhone = `+${callingCode}${phone}`;
+      const confirmation = await sendOtp(fullPhone);
 
-    
-    dispatch(setConfirmation(confirmation));
+      navigation.navigate("FarmerOtp", {
+        confirmation,
+        phone: fullPhone,
+        mode: "signup",
+      });
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
 
-    // navigate to OTP screen
-    navigation.navigate("FarmerOtp", { phone: fullPhone });
-  } catch (error) {
-    console.error("Error sending OTP:", error.message);
-    alert("Failed to send OTP. Try again.");
-  }
-};
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <ImageBackground
+        source={require("../../images/background.jpg")}
+        style={{ flex: 1 }}
+        resizeMode="cover"
+      >
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          {/* Logo */}
+          <Image
+            source={require("../../images/logodark.png")}
+            style={{ width: 300, height: 200 }}
+            resizeMode="contain"
+          />
 
+          {/* Title */}
+          <Text style={{ fontSize: 28, fontWeight: "bold", color: "#006644", marginBottom: 10 }}>
+            {t("farmerSignup.title")}
+          </Text>
+          <Text
+            style={{
+              fontSize: 18,
+              color: "#006644",
+              marginBottom: 30,
+              textAlign: "center",
+            }}
+          >
+            {t("farmerSignup.subtitle")}
+          </Text>
 
-   const handlePress = (num) => {
-  setPhone(phone + num);
-};
+          {/* Country Picker + Phone Display */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              borderColor: "#006644",
+              borderWidth: 2,
+              borderRadius: 10,
+              width: "100%",
+              backgroundColor: "rgba(255,255,255,0.1)",
+              paddingHorizontal: 10,
+              paddingVertical: 12,
+              marginBottom: 20,
+            }}
+          >
+            <CountryPicker
+              countryCode={countryCode}
+              withFilter
+              withFlag
+              withAlphaFilter
+              withCallingCode
+              withModal
+              onSelect={(country) => {
+                setCountryCode(country.cca2);
+                setCallingCode(country.callingCode[0]);
+              }}
+            />
+            <Text style={{ color: "#006644", fontSize: 20, marginHorizontal: 8 }}>
+              +{callingCode}
+            </Text>
+            <TextInput
+              placeholder={t("farmerSignup.phonePlaceholder")}
+              placeholderTextColor="#006644"
+              value={phone}
+              editable={false} // ✅ Only editable via numeric pad
+              style={{ flex: 1, fontSize: 20, color: "#006644" }}
+            />
+          </View>
 
+          {/* Numeric Pad */}
+          <NumericPad
+            onPressNumber={handlePress}
+            onBackspace={handleBackspace}
+            onSubmit={handleSignup}
+          />
 
-    const handleBackspace = () => setPhone(phone.slice(0, -1));
-
-    return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <ImageBackground
-                source={require('../../images/background.jpg')}
-                style={{ flex: 1 }}
-                resizeMode="cover"
+          {/* Continue Button */}
+          <TouchableOpacity
+            onPress={handleSignup}
+            style={{
+              width: "100%",
+              borderRadius: 10,
+              backgroundColor: "#006644",
+              alignItems: "center",
+              marginTop: 20,
+              marginBottom: 20,
+            }}
+          >
+            <Text
+              style={{
+                paddingVertical: 12,
+                color: "#ffffff",
+                fontSize: 20,
+                fontWeight: "bold",
+              }}
             >
-                {/* Back Button */}
-                        <TouchableOpacity
-                          onPress={() => navigation.goBack()}
-                          style={{
-                            position: 'absolute',
-                            top: 50,
-                            left: 20,
-                            zIndex: 1,
-                            backgroundColor: '#006644',
-                            padding: 10,
-                            borderRadius: 50,
-                          }}
-                        >
-                          <Icon name="arrow-back" size={24} color="#fff" />
-                        </TouchableOpacity>
+              {t("farmerSignup.continue")}
+            </Text>
+          </TouchableOpacity>
 
-                <ScrollView
-                    contentContainerStyle={{
-                        flexGrow: 1,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        padding: 20,
-                       gap:15
-                    }}
-                >
-                    {/* Logo */}
-                    <Image
-                        source={require('../../images/logodark.png')}
-                        style={{ width: 300, height: 100, marginBottom: 20 }}
-                    />
-
-                    {/* Title */}
-                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#006644', marginBottom: 10 }}>
-                        {t("farmerSignup.title")}
-                    </Text>
-                    <Text style={{ fontSize: 18, color: '#006644', marginBottom: 30 }}>
-                        {t("farmerSignup.subtitle")}
-                    </Text>
-
-                    {/* Phone Input */}
-                    <TouchableOpacity
-                        activeOpacity={1}
-                        onPress={() => setShowPad(true)}
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            borderColor: '#006644',
-                            borderWidth: 2,
-                            borderRadius: 10,
-                            width: '100%',
-                            backgroundColor: 'rgba(255,255,255,0.1)',
-                            paddingHorizontal: 10,
-                            paddingVertical: 12,
-                            marginBottom: 15,
-                        }}
-                    >
-                        <CountryPicker
-                            countryCode={countryCode}
-                            withFilter
-                            withFlag
-                            withAlphaFilter
-                            withCallingCode
-                            withModal
-                            onSelect={(country) => {
-                                setCountryCode(country.cca2);
-                                setCallingCode(country.callingCode[0]);
-                            }}
-                        />
-                        <Text style={{ color: '#006644', fontSize: 20, marginHorizontal: 8 }}>
-                            +{callingCode}
-                        </Text>
-                        <TextInput
-                            value={phone}
-                            placeholder={t("farmerSignup.phonePlaceholder")}   
-                            placeholderTextColor="#006644"
-                            editable={false}
-                            style={{ flex: 1, fontSize: 20, color: '#006644' }}
-                        />
-                    </TouchableOpacity>
-
-                    {/* Numeric pad */}
-                    {showPad && (
-                        <NumericPad
-                            onPressNumber={handlePress}
-                            onBackspace={handleBackspace}
-                            onSubmit={() => setShowPad(false)}
-                        />
-                    )}
-
-                    {/* Continue Button */}
-                   <TouchableOpacity
-  onPress={handleContinue}
-  style={{
-    width: '100%',
-    borderRadius: 10,
-    backgroundColor: '#006644',
-    alignItems: 'center',
-    marginBottom: 20,
-  }}
->
-  <Text style={{ paddingVertical: 12, color: '#ffffff', fontSize: 20, fontWeight: 'bold' }}>
-    {t("farmerSignup.continue")}
-  </Text>
-</TouchableOpacity>
-
-
-                    {/* Login */}
-                    <Text style={{ color: '#006644' ,fontSize: 18 }}>
-                        {t("farmerSignup.alreadyAccount")}{" "}
-                        <Text style={{ fontWeight: 'bold',fontSize: 18 }} onPress={() => navigation.navigate('FarmerLogin')}>
-                            {t("farmerSignup.login")}
-                        </Text>
-                    </Text>
-                </ScrollView>
-            </ImageBackground>
-        </SafeAreaView>
-    );
+          {/* Already have account? Login */}
+          <Text style={{ color: "#006644", fontSize: 18 }}>
+            {t("farmerSignup.alreadyAccount")}{" "}
+            <Text
+              style={{ fontWeight: "bold", fontSize: 18 }}
+              onPress={() => navigation.navigate("FarmerLogin")}
+            >
+              {t("farmerSignup.login")}
+            </Text>
+          </Text>
+        </ScrollView>
+      </ImageBackground>
+    </SafeAreaView>
+  );
 };
 
-export default Farmersignup;
+export default FarmerSignup;
