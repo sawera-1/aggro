@@ -4,6 +4,7 @@ const initialState = {
   user: null,          // Firebase user object
   role: "",            // "farmer" or "expert"
   loading: false,
+  confirmation: null,  // store Firebase OTP confirmation object here
 };
 
 const homeSlice = createSlice({
@@ -19,12 +20,18 @@ const homeSlice = createSlice({
     setLoading: (state, action) => {
       state.loading = action.payload;
     },
+    setConfirmation: (state, action) => {
+      state.confirmation = action.payload;
+    },
     logoutUser: (state) => {
       state.user = null;
       state.role = "";
+      state.confirmation = null;
     },
   },
 });
 
-export const { setUser, setRole, setLoading, logoutUser } = homeSlice.actions;
+export const { setUser, setRole, setLoading, setConfirmation, logoutUser } =
+  homeSlice.actions;
+
 export default homeSlice.reducer;

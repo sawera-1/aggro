@@ -1,66 +1,66 @@
-// ExpertOtp.js
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, TouchableOpacity, Image, ImageBackground, Alert } from 'react-native';
-import NumericPad from '../../Components/Numericpad';
-import { useTranslation } from 'react-i18next';
-import { expertverifyOtpAndSignUp } from '../../Helper/firebaseHelper';
-import { useSelector, useDispatch } from 'react-redux';
-import { setUser } from '../../redux/Slices/HomeDataSlice';
+import React, { useState } from "react";
+import {
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  ImageBackground,
+  ScrollView,
+  View,
+  ActivityIndicator,
+  Alert,Image
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { setUser, setRole } from "../../redux/Slices/HomeDataSlice";
+import { verifyExpertOtpAndSaveUser } from "../../Helper/firebaseHelper";
+import { useTranslation } from "react-i18next";
+import NumericPad from "../../Components/Numericpad";
 
 const ExpertOtp = ({ navigation, route }) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const { phone, expertData } = route.params;
   const confirmation = useSelector((state) => state.home.confirmation);
 
-  const { phone, expertData } = route.params;
-
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handlePress = (num) => {
-    if (currentIndex < 6) {
-      const newOtp = [...otp];
-      newOtp[currentIndex] = num;
-      setOtp(newOtp);
-      setCurrentIndex(currentIndex + 1);
+  const dispatch = useDispatch();
 
-      if (newOtp.join('').length === 6) {
-        handleConfirm(newOtp.join(''));
-      }
+  // ✅ NumericPad handlers
+  const handlePress = (num) => {
+    if (otp.length < 6) {
+      setOtp(otp + num);
     }
   };
 
   const handleBackspace = () => {
-    if (currentIndex > 0) {
-      const newOtp = [...otp];
-      newOtp[currentIndex - 1] = '';
-      setOtp(newOtp);
-      setCurrentIndex(currentIndex - 1);
-    }
+    setOtp(otp.slice(0, -1));
   };
 
-  const handleConfirm = async (codeFromAuto = null) => {
-    const code = codeFromAuto || otp.join('');
-    if (code.length < 6) {
-      Alert.alert('Error', 'Please enter full OTP');
+  const handleConfirm = async () => {
+    if (otp.length < 6) {
+      Alert.alert("Error", "Enter full 6-digit OTP");
       return;
     }
 
     try {
       setLoading(true);
+      if (!confirmation) {
+        Alert.alert("Error", "Confirmation not found. Please restart signup.");
+        return;
+      }
 
-      const userData = await expertverifyOtpAndSignUp(
+      const user = await verifyExpertOtpAndSaveUser(
         confirmation,
-        code,
-        { ...expertData, phone }
+        otp,
+        expertData
       );
 
-      dispatch(setUser(userData));
-      navigation.replace('EOtpSuccess');
-    } catch (error) {
-      console.error('OTP verification failed:', error);
-      navigation.replace('EOtpFailure');
+      dispatch(setUser(user));
+      dispatch(setRole("expert"));
+      navigation.replace("EOtpSuccess");
+    } catch (e) {
+      console.error("OTP Verification Failed:", e);
+      navigation.replace("EOtpFailure");
     } finally {
       setLoading(false);
     }
@@ -69,45 +69,170 @@ const ExpertOtp = ({ navigation, route }) => {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
-        source={require('../../images/background.jpg')}
+        source={require("../../images/background.jpg")}
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          <Text style={{ fontSize: 20, fontWeight: '600', color: '#000', marginBottom: 30 }}>
-            {t('expertOtp.title')}
-          </Text>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+         <Image
+                     source={require('../../images/logodark.png')}
+                     style={{ width: 200, height: 100, marginBottom: 20 }}
+                   />
+         
+                   <Text
+                     style={{
+                       fontSize: 20,
+                       fontWeight: '600',
+                       color: '#000',
+                       textAlign: 'center',
+                       marginBottom: 8,
+                     }}
+                   >
+                     {t('expertOtp.title')}
+                   </Text>
+                   <Text style={{ color: '#555', textAlign: 'center', marginBottom: 30 }}>
+                     {t('expertOtp.subtitle')}
+                   </Text>
 
-          {/* OTP boxes without .map */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 30 }}>
-            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+          {/* OTP Boxes without .map */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              marginBottom: 30,
+            }}
+          >
+            <Text
+              style={{
+                borderWidth: 1,
+                borderColor: "#006644",
+                borderRadius: 8,
+                width: 50,
+                height: 50,
+                textAlign: "center",
+                textAlignVertical: "center",
+                fontSize: 18,
+                backgroundColor: "#fff",
+                marginHorizontal: 4,
+              }}
+            >
               {otp[0]}
             </Text>
-            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+            <Text
+              style={{
+                borderWidth: 1,
+                borderColor: "#006644",
+                borderRadius: 8,
+                width: 50,
+                height: 50,
+                textAlign: "center",
+                textAlignVertical: "center",
+                fontSize: 18,
+                backgroundColor: "#fff",
+                marginHorizontal: 4,
+              }}
+            >
               {otp[1]}
             </Text>
-            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+            <Text
+              style={{
+                borderWidth: 1,
+                borderColor: "#006644",
+                borderRadius: 8,
+                width: 50,
+                height: 50,
+                textAlign: "center",
+                textAlignVertical: "center",
+                fontSize: 18,
+                backgroundColor: "#fff",
+                marginHorizontal: 4,
+              }}
+            >
               {otp[2]}
             </Text>
-            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+            <Text
+              style={{
+                borderWidth: 1,
+                borderColor: "#006644",
+                borderRadius: 8,
+                width: 50,
+                height: 50,
+                textAlign: "center",
+                textAlignVertical: "center",
+                fontSize: 18,
+                backgroundColor: "#fff",
+                marginHorizontal: 4,
+              }}
+            >
               {otp[3]}
             </Text>
-            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+            <Text
+              style={{
+                borderWidth: 1,
+                borderColor: "#006644",
+                borderRadius: 8,
+                width: 50,
+                height: 50,
+                textAlign: "center",
+                textAlignVertical: "center",
+                fontSize: 18,
+                backgroundColor: "#fff",
+                marginHorizontal: 4,
+              }}
+            >
               {otp[4]}
             </Text>
-            <Text style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, width: 50, height: 50, textAlign: 'center', fontSize: 18, backgroundColor: '#fff', marginHorizontal: 1 }}>
+            <Text
+              style={{
+                borderWidth: 1,
+                borderColor: "#006644",
+                borderRadius: 8,
+                width: 50,
+                height: 50,
+                textAlign: "center",
+                textAlignVertical: "center",
+                fontSize: 18,
+                backgroundColor: "#fff",
+                marginHorizontal: 4,
+              }}
+            >
               {otp[5]}
             </Text>
           </View>
 
           {/* Numeric Pad */}
-          <NumericPad onPressNumber={handlePress} onBackspace={handleBackspace} />
+          <NumericPad
+            onPressNumber={handlePress}
+            onBackspace={handleBackspace}
+          />
 
+          {/* Verify Button */}
           <TouchableOpacity
-            onPress={() => handleConfirm()}
-            style={{ backgroundColor: '#006644', padding: 15, borderRadius: 8, alignItems: 'center', width: '60%', marginTop: 20 }}
+            onPress={handleConfirm}
+            disabled={loading}
+            style={{
+              backgroundColor: loading ? "#999" : "#006644",
+              padding: 15,
+              borderRadius: 8,
+              alignItems: "center",
+              width: "60%",
+              marginTop: 20,
+            }}
           >
-            <Text style={{ color: '#fff', fontSize: 16 }}>{t('expertOtp.confirm')}</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
+                {t("expertOtp.confirm")}
+              </Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>

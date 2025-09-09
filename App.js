@@ -14,7 +14,7 @@ import { useSelector } from "react-redux";
 const RootNavigator = () => {
   const role = useSelector((state) => state.home.role);
 
-  switch (role) {//chng into role after cheakin
+  switch ("expert") {//chng into role after cheakin
     case "farmer":
       return <FarmerStack />;
     case "expert":

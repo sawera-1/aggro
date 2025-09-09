@@ -1,42 +1,59 @@
-import React, { useState } from 'react';
-import { 
-  SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, Image, ImageBackground, Alert 
-} from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
-import { getExpertByPhoneAndPassword } from '../../Helper/firebaseHelper';
-import { setUser } from '../../redux/Slices/HomeDataSlice';
+import React, { useState } from "react";
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ImageBackground,
+  Alert,
+} from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import CountryPicker from "react-native-country-picker-modal";
+import { useDispatch } from "react-redux";
+import { setUser, setRole } from "../../redux/Slices/HomeDataSlice";
+import { getExpertByPhoneAndPassword } from "../../Helper/firebaseHelper";
 
 const ExpertLogin = ({ navigation }) => {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Country picker states
+  const [countryCode, setCountryCode] = useState("PK"); // default Pakistan
+  const [callingCode, setCallingCode] = useState("92");
+
   const handleLogin = async () => {
     if (!phoneNumber || !password) {
-      Alert.alert('Error', 'Please fill all fields');
+      Alert.alert("Error", "Please fill all fields");
       return;
     }
 
+    const fullPhone = `+${callingCode}${phoneNumber.replace(/^0+/, "")}`;
+
     try {
       setLoading(true);
-      const userData = await getExpertByPhoneAndPassword(phoneNumber, password);
+      const userData = await getExpertByPhoneAndPassword(fullPhone, password);
 
       if (!userData) {
-      navigation.replace('ExpertloginFailure');
+        Alert.alert("Login Failed", "Invalid phone number or password");
+        navigation.replace("ExpertloginFailure");
         return;
       }
 
+      // ✅ Save user in Redux
       dispatch(setUser(userData));
-      navigation.replace('ExpertloginSuccess');
+      dispatch(setRole("expert"));
+
+      navigation.replace("ExpertloginSuccess");
     } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      console.error("Login error:", error);
+      Alert.alert("Error", "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -45,60 +62,90 @@ const ExpertLogin = ({ navigation }) => {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
-        source={require('../../images/background.jpg')}
+        source={require("../../images/background.jpg")}
         style={{ flex: 1 }}
         resizeMode="cover"
       >
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
+            justifyContent: "center",
+            alignItems: "center",
             padding: 20,
           }}
         >
           {/* Logo */}
           <Image
-            source={require('../../images/logodark.png')}
+            source={require("../../images/logodark.png")}
             style={{ width: 250, height: 80, marginBottom: 30 }}
           />
 
           {/* Title */}
-          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#006644', marginBottom: 30 }}>
-            {t('expertLogin.title')}
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: "bold",
+              color: "#006644",
+              marginBottom: 30,
+            }}
+          >
+            Expert Login
           </Text>
 
-          {/* Phone Number */}
-          <TextInput
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            placeholder="Phone Number"
-            keyboardType="phone-pad"
-            placeholderTextColor="#006644"
+          {/* Country Picker + Phone Input */}
+          <View
             style={{
-              borderColor: '#006644',
+              flexDirection: "row",
+              alignItems: "center",
+              borderColor: "#006644",
               borderWidth: 2,
               borderRadius: 10,
-              width: '100%',
-              backgroundColor: 'rgba(255,255,255,0.1)',
+              width: "100%",
+              backgroundColor: "rgba(255,255,255,0.1)",
               paddingHorizontal: 10,
-              paddingVertical: 16,
-              fontSize: 16,
-              color: '#006644',
+              paddingVertical: 12,
               marginBottom: 15,
             }}
-          />
+          >
+            <CountryPicker
+              countryCode={countryCode}
+              withFilter
+              withFlag
+              withCallingCode
+              withEmoji
+              onSelect={(country) => {
+                setCountryCode(country.cca2);
+                setCallingCode(country.callingCode[0]);
+              }}
+            />
+            <Text style={{ marginHorizontal: 8, fontSize: 16, color: "#006644" }}>
+              +{callingCode}
+            </Text>
+            <TextInput
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              placeholder="Phone Number"
+              keyboardType="phone-pad"
+              placeholderTextColor="#006644"
+              style={{
+                flex: 1,
+                fontSize: 16,
+                color: "#006644",
+                paddingVertical: 0,
+              }}
+            />
+          </View>
 
           {/* Password */}
           <View
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              borderColor: '#006644',
+              flexDirection: "row",
+              alignItems: "center",
+              borderColor: "#006644",
               borderWidth: 2,
               borderRadius: 10,
-              width: '100%',
-              backgroundColor: 'rgba(255,255,255,0.1)',
+              width: "100%",
+              backgroundColor: "rgba(255,255,255,0.1)",
               paddingHorizontal: 10,
               paddingVertical: 5,
               marginBottom: 15,
@@ -110,11 +157,11 @@ const ExpertLogin = ({ navigation }) => {
               placeholder="Password"
               placeholderTextColor="#006644"
               secureTextEntry={!showPassword}
-              style={{ flex: 1, fontSize: 16, color: '#006644' }}
+              style={{ flex: 1, fontSize: 16, color: "#006644" }}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Ionicons
-                name={showPassword ? 'eye-off' : 'eye'}
+                name={showPassword ? "eye-off" : "eye"}
                 size={22}
                 color="#006644"
               />
@@ -125,10 +172,10 @@ const ExpertLogin = ({ navigation }) => {
           <TouchableOpacity
             onPress={handleLogin}
             style={{
-              width: '100%',
+              width: "100%",
               borderRadius: 10,
-              backgroundColor: '#006644',
-              alignItems: 'center',
+              backgroundColor: "#006644",
+              alignItems: "center",
               marginBottom: 15,
               opacity: loading ? 0.6 : 1,
             }}
@@ -137,39 +184,46 @@ const ExpertLogin = ({ navigation }) => {
             <Text
               style={{
                 paddingVertical: 12,
-                color: '#ffffff',
+                color: "#ffffff",
                 fontSize: 16,
-                fontWeight: 'bold',
+                fontWeight: "bold",
               }}
             >
-              {loading ? 'Logging in...' : t('expertLogin.login')}
+              {loading ? "Logging in..." : "Login"}
             </Text>
           </TouchableOpacity>
 
           {/* Forgot Password */}
-         <TouchableOpacity
-  onPress={() => {
-    if (!phoneNumber) {
-      Alert.alert('Error', 'Please enter your phone number first');
-      return;
-    }
-    navigation.navigate('ExpertpasswordOtp', { phone: phoneNumber });
-  }}
->
-  <Text style={{ color: '#006644', marginBottom: 20, fontSize: 16 }}>
-    {t('expertLogin.forgotPassword')}
-  </Text>
-</TouchableOpacity>
-
+          <TouchableOpacity
+            onPress={() => {
+              if (!phoneNumber) {
+                Alert.alert("Error", "Please enter your phone number first");
+                return;
+              }
+              navigation.navigate("ExpertpasswordOtp", {
+                phone: `+${callingCode}${phoneNumber.replace(/^0+/, "")}`,
+              });
+            }}
+          >
+            <Text
+              style={{
+                color: "#006644",
+                marginBottom: 20,
+                fontSize: 16,
+              }}
+            >
+              Forgot Password?
+            </Text>
+          </TouchableOpacity>
 
           {/* Signup */}
-          <Text style={{ color: '#006644' }}>
-            {t('expertLogin.noAccount')}{' '}
+          <Text style={{ color: "#006644" }}>
+            Don’t have an account?{" "}
             <Text
-              style={{ fontWeight: 'bold', fontSize: 16 }}
-              onPress={() => navigation.navigate('ExpertSignup')}
+              style={{ fontWeight: "bold", fontSize: 16 }}
+              onPress={() => navigation.navigate("ExpertSignup")}
             >
-              {t('expertLogin.signup')}
+              Signup
             </Text>
           </Text>
         </ScrollView>
