@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-    SafeAreaView,
     ScrollView,
     View,
     TouchableOpacity,
@@ -11,7 +10,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const ExpertChannel = ({ navigation }) => {
     const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');

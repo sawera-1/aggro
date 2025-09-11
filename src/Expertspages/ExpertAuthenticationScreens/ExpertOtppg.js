@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   Text,
   TouchableOpacity,
-  SafeAreaView,
   ImageBackground,
   ScrollView,
   View,
@@ -14,7 +13,7 @@ import { setUser, setRole } from "../../redux/Slices/HomeDataSlice";
 import { verifyExpertOtpAndSaveUser } from "../../Helper/firebaseHelper";
 import { useTranslation } from "react-i18next";
 import NumericPad from "../../Components/Numericpad";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const ExpertOtp = ({ navigation, route }) => {
   const { t } = useTranslation();
   const { phone, expertData } = route.params;

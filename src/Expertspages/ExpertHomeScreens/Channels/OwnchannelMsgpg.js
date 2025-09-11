@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   View,
   TouchableOpacity,
@@ -16,7 +15,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const OwnChannelMsgScreen = ({ navigation }) => {
   const { t } = useTranslation();
   const [menuVisible, setMenuVisible] = useState(false);

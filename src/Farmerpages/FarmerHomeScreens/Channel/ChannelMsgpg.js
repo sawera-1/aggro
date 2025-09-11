@@ -1,41 +1,63 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  SafeAreaView,
-  ScrollView,
   View,
   TouchableOpacity,
   Text,
   Image,
   TextInput,
   Modal,
-  ImageBackground
-} from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import Entypo from 'react-native-vector-icons/Entypo';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { useRoute } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';
-
+  ImageBackground,
+  ActivityIndicator,
+  FlatList
+} from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import Entypo from "react-native-vector-icons/Entypo";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
+import { useRoute } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
+import { getQueries } from "../../../Helper/firebaseHelper";
+import { SafeAreaView } from "react-native-safe-area-context";
 const ChannelMsgScreen = ({ navigation }) => {
   const [menuVisible, setMenuVisible] = useState(false);
+  const [queries, setQueries] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
   const route = useRoute();
   const { name, image, description } = route.params || {};
 
+  // Fetch queries from Firestore
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await getQueries();
+      setQueries(data);
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  // Loading indicator
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="green" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
-        source={require('../../../images/background.jpg')}
+        source={require("../../../images/background.jpg")}
         style={{ flex: 1 }}
         resizeMode="cover"
       >
         {/* Top Bar */}
         <View
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#006644',
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "#006644",
             paddingVertical: 10,
             paddingHorizontal: 10
           }}
@@ -44,10 +66,9 @@ const ChannelMsgScreen = ({ navigation }) => {
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
 
-          {/* Channel Image */}
           <TouchableOpacity
             onPress={() =>
-              navigation.navigate('ChannelDes', {
+              navigation.navigate("ChannelDes", {
                 channelName: name,
                 channelImage: image,
                 channelDescription: description
@@ -55,7 +76,7 @@ const ChannelMsgScreen = ({ navigation }) => {
             }
           >
             <Image
-              source={image || require('../../../images/chdummyimg.png')}
+              source={image || require("../../../images/chdummyimg.png")}
               style={{
                 width: 40,
                 height: 40,
@@ -65,64 +86,72 @@ const ChannelMsgScreen = ({ navigation }) => {
             />
           </TouchableOpacity>
 
-          {/* Channel Name */}
-          <Text style={{ color: '#fff', fontSize: 18, flex: 1 }}>
-            {name || 'Unknown'}
+          <Text style={{ color: "#fff", fontSize: 18, flex: 1 }}>
+            {name || "Unknown"}
           </Text>
 
-          {/* Follow Button */}
           <TouchableOpacity
             style={{
-              flexDirection: 'row',
-              backgroundColor: '#fff',
+              flexDirection: "row",
+              backgroundColor: "#fff",
               paddingVertical: 4,
               paddingHorizontal: 8,
               borderRadius: 5,
-              alignItems: 'center'
+              alignItems: "center"
             }}
           >
             <Entypo name="plus" size={18} color="#006644" />
-            <Text style={{ color: '#006644', marginLeft: 5,fontSize:16 }}>{t('channelmsg.follow')}</Text>
-
+            <Text style={{ color: "#006644", marginLeft: 5, fontSize: 16 }}>
+              {t("channelmsg.follow")}
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Chat Body */}
-        <ScrollView style={{ flex: 1, padding: 10 }}>
-          <View
-            style={{
-              backgroundColor: '#DCF8C6',
-              padding: 10,
-              borderRadius: 10,
-              alignSelf: 'flex-start',
-              marginBottom: 10
-            }}
-          >
-            <Text>Hello! This is a test message.</Text>
-          </View>
+        <FlatList
+  style={{ flex: 1, padding: 10 }}
+  data={queries}
+  keyExtractor={(item, index) => item.id || index.toString()}
+  renderItem={({ item }) => (
+    <View
+      style={{
+        backgroundColor: "#DCF8C6",
+        padding: 10,
+        borderRadius: 10,
+        alignSelf: "flex-start",
+        marginBottom: 10
+      }}
+    >
+      {/* Sender/User ID */}
+      <Text style={{ fontWeight: "bold", fontSize: 14, color: "gray", marginBottom: 4 }}>
+        {item.senderID?.trim() || "Unknown"}
+      </Text>
 
-          <View
-            style={{
-              backgroundColor: '#fff',
-              padding: 10,
-              borderRadius: 10,
-              alignSelf: 'flex-end',
-              marginBottom: 10
-            }}
-          >
-            <Text>Hi! This is a reply.</Text>
-          </View>
-        </ScrollView>
+      {/* Message */}
+      <Text style={{ fontSize: 16, marginBottom: 4 }}>
+        {item.message || item.queryType || "No message"}
+      </Text>
+
+      {/* Time */}
+      <Text style={{ fontSize: 12, color: "blue", alignSelf: "flex-end" }}>
+        {item.createdAt?.toDate
+          ? item.createdAt.toDate().toLocaleString()
+          : "No Date"}
+      </Text>
+    </View>
+  )}
+/>
+
 
         {/* Bottom Bar */}
         <View
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
+            flexDirection: "row",
+            alignItems: "center",
             padding: 5,
-            backgroundColor: '#006644',
+            backgroundColor: "#006644",
             borderTopWidth: 1,
-            borderColor: '#006644'
+            borderColor: "#006644"
           }}
         >
           <TouchableOpacity onPress={() => setMenuVisible(true)}>
@@ -135,10 +164,10 @@ const ChannelMsgScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           <TextInput
-            placeholder={t('channelmsg.typeMessage')}
+            placeholder={t("channelmsg.typeMessage")}
             style={{
               flex: 1,
-              backgroundColor: '#e9e9e1',
+              backgroundColor: "#e9e9e1",
               borderRadius: 20,
               paddingHorizontal: 15,
               marginHorizontal: 5
@@ -177,48 +206,48 @@ const ChannelMsgScreen = ({ navigation }) => {
           >
             <View
               style={{
-                position: 'absolute',
+                position: "absolute",
                 bottom: 60,
                 left: 10,
-                backgroundColor: '#e9e9e9',
+                backgroundColor: "#e9e9e9",
                 borderRadius: 10,
                 padding: 10,
                 elevation: 5
               }}
             >
               <TouchableOpacity
-                style={{ flexDirection: 'row', paddingVertical: 8 }}
+                style={{ flexDirection: "row", paddingVertical: 8 }}
               >
                 <Ionicons name="camera" size={20} color="#031501ff" />
-                <Text style={{ marginLeft: 10 }}>{t('channelmsg.camera')}</Text>
+                <Text style={{ marginLeft: 10 }}>{t("channelmsg.camera")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ flexDirection: 'row', paddingVertical: 8 }}
+                style={{ flexDirection: "row", paddingVertical: 8 }}
               >
                 <MaterialIcons
                   name="insert-drive-file"
                   size={20}
                   color="#031501ff"
                 />
-                <Text style={{ marginLeft: 10 }}>{t('channelmsg.documents')}</Text>
+                <Text style={{ marginLeft: 10 }}>{t("channelmsg.documents")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ flexDirection: 'row', paddingVertical: 8 }}
+                style={{ flexDirection: "row", paddingVertical: 8 }}
               >
                 <Ionicons name="location" size={20} color="#031501ff" />
-               <Text style={{ marginLeft: 10 }}>{t('channelmsg.location')}</Text>
+                <Text style={{ marginLeft: 10 }}>{t("channelmsg.location")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ flexDirection: 'row', paddingVertical: 8 }}
+                style={{ flexDirection: "row", paddingVertical: 8 }}
               >
                 <Ionicons name="images" size={20} color="#031501ff" />
-                <Text style={{ marginLeft: 10 }}>{t('channelmsg.photos')}</Text>
+                <Text style={{ marginLeft: 10 }}>{t("channelmsg.photos")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ flexDirection: 'row', paddingVertical: 8 }}
+                style={{ flexDirection: "row", paddingVertical: 8 }}
               >
                 <Ionicons name="person" size={20} color="#031501ff" />
-                <Text style={{ marginLeft: 10 }}>{t('channelmsg.contact')}</Text>
+                <Text style={{ marginLeft: 10 }}>{t("channelmsg.contact")}</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

@@ -38,14 +38,12 @@
     "retry": "Try Again"
   },
   "channels": {
-    "title": "Channels",
-    "searchPlaceholder": "Search channels",
-    "following": "Following",
-    "discover": "Discover",
-    "channel1": {
-      "name": "Farming Tips",
-      "description": "Daily tips for farmers"
-    },
+   "title": "Channels",
+  "searchPlaceholder": "Search channels...",
+  "following": "Following",
+  "discover": "Discover",
+  "noFollowed": "You are not following any channels yet.",
+  "noData": "No channels available to discover.",
     "settings": "Settings"
   },
   "channelmsg": {

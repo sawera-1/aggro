@@ -6,12 +6,11 @@ import {
     Image,
     TextInput,
     ScrollView,
-    ImageBackground,
-    SafeAreaView
+    ImageBackground
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const ChatScreen = ({ navigation }) => {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('Chat');

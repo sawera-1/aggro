@@ -1,6 +1,7 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, View, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
+import {ScrollView, View, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from "react-native-safe-area-context";
 const EOtpSuccess = ({ navigation }) => {
    const { t } = useTranslation();
   return (

@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  SafeAreaView,
   ScrollView,
   ImageBackground,
   ActivityIndicator,
@@ -15,7 +14,7 @@ import NumericPad from '../../Components/Numericpad';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../redux/Slices/HomeDataSlice';
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const FarmerOtp = ({ navigation, route }) => {
   const { confirmation, phone } = route.params;
   const { t } = useTranslation();

@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  SafeAreaView,
   Image,
   ImageBackground,
   ScrollView,
@@ -14,7 +13,7 @@ import CountryPicker from "react-native-country-picker-modal";
 import NumericPad from "../../Components/Numericpad";
 import { checkIfUserExists, sendOtp } from "../../Helper/firebaseHelper";
 import { useTranslation } from "react-i18next";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const FarmerLogin = ({ navigation }) => {
   const { t } = useTranslation();
   const [phone, setPhone] = useState("");

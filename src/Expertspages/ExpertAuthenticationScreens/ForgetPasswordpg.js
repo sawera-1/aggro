@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  SafeAreaView, ScrollView, View, Text, TextInput, TouchableOpacity, ImageBackground, Image, Alert 
+import {  ScrollView, View, Text, TextInput, TouchableOpacity, ImageBackground, Image, Alert 
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { firestore } from '../../firebase'; // Make sure firestore is imported
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const ExpertChangePassword = ({ navigation, route }) => {
   const { t } = useTranslation();
   const { phone } = route.params; // get phone from OTP screen

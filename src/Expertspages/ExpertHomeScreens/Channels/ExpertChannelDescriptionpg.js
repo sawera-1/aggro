@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { SafeAreaView, View, Text, Image, TouchableOpacity, ScrollView, Modal, ImageBackground } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, Modal, ImageBackground } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-
+import { SafeAreaView } from "react-native-safe-area-context";
 export default function ExpertChannelDescription({ navigation }) {
   const { t } = useTranslation();
   const route = useRoute();

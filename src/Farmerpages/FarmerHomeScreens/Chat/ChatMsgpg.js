@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { SafeAreaView, View, Text, TouchableOpacity, Image, TextInput, ScrollView, Modal } from 'react-native';
+import {  View, Text, TouchableOpacity, Image, TextInput, ScrollView, Modal } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Entypo from 'react-native-vector-icons/Entypo';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';  
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const ChatMsgScreen = ({ navigation }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const route = useRoute();

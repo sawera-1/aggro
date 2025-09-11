@@ -5,13 +5,12 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
-  Modal,
-  SafeAreaView
+  Modal
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-
+import { SafeAreaView } from "react-native-safe-area-context";
 export default function ChatDescription() {
   const route = useRoute();
   const navigation = useNavigation();

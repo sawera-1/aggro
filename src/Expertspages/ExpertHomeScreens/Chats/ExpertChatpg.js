@@ -7,11 +7,10 @@ import {
     TextInput,
     ScrollView,
     ImageBackground,
-    SafeAreaView
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const ExpertChat = ({ navigation }) => {
     const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');

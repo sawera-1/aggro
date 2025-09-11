@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   ImageBackground,
   ScrollView,
@@ -13,8 +12,8 @@ import {
 import { useTranslation } from "react-i18next";
 import CountryPicker from "react-native-country-picker-modal";
 import { sendOtp } from "../../Helper/firebaseHelper";
-import NumericPad from "../../Components/Numericpad"; // ✅ make sure path is correct
-
+import NumericPad from "../../Components/Numericpad"; 
+import { SafeAreaView } from "react-native-safe-area-context";
 const FarmerSignup = ({ navigation }) => {
   const { t } = useTranslation();
   const [phone, setPhone] = useState("");

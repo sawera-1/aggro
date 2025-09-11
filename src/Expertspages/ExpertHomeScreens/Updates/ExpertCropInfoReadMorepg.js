@@ -5,13 +5,14 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
-  ImageBackground
+  ImageBackground,
+  Linking
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useTranslation } from 'react-i18next';
-export default function ExpertCropReadMore({ navigation }) {
-  
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export default function ExpertCropReadMore({ navigation, route }) {
+  const { crop } = route.params;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -31,14 +32,11 @@ export default function ExpertCropReadMore({ navigation }) {
             elevation: 4
           }}
         >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{ marginRight: 10 }}
-          >
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
             <Icon name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-           {t('expertCrop.title')}
+            {crop?.name || "Crop Info"}
           </Text>
         </View>
 
@@ -68,62 +66,41 @@ export default function ExpertCropReadMore({ navigation }) {
             />
 
             {/* Name */}
-            <Text
-              style={{
-                fontSize: 22,
-                fontWeight: 'bold',
-                color: '#006644',
-                marginBottom: 6
-              }}
-            >
-             {t('expertCrop.productName')}
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#006644', marginBottom: 6 }}>
+              {crop?.name || "N/A"}
             </Text>
 
-            {/* Price */}
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: 'bold',
-                color: '#333',
-                marginBottom: 10
-              }}
-            >
-              {t('expertCrop.price')}
+            {/* Market Price */}
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 10 }}>
+              💰 Market Price: {crop?.marketPrice || "N/A"}
             </Text>
 
-            {/* Crop Info */}
-            <Text
-              style={{
-                fontSize: 15,
-                lineHeight: 22,
-                color: '#555',
-                marginBottom: 12
-              }}
-            >
-              {t('expertCrop.description')}
+            {/* Description */}
+            <Text style={{ fontSize: 15, lineHeight: 22, color: '#555', marginBottom: 12 }}>
+              {crop?.description || "No description available."}
             </Text>
 
-            {/* Season Name */}
+            {/* Season */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}> {t('expertCrop.season')}</Text> 
+              🌱 Season: {crop?.cropSeason || "N/A"}
             </Text>
 
             {/* Duration */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}> {t('expertCrop.duration')}</Text> 
+              ⏳ Duration: {crop?.duration || "N/A"}
             </Text>
 
             {/* Water Requirement */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>{t('expertCrop.waterRequirement')}</Text> 
+              💧 Water: {crop?.waterRequirement || "N/A"}
             </Text>
 
             {/* Soil Type */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>{t('expertCrop.readMore')}</Text>
+              🌍 Soil: {crop?.soilType || crop?.soiltype || "N/A"}
             </Text>
 
-            {/* Read More + Speaker Button */}
+            {/* Buttons Row */}
             <View
               style={{
                 flexDirection: 'row',
@@ -132,8 +109,15 @@ export default function ExpertCropReadMore({ navigation }) {
                 justifyContent: 'space-between'
               }}
             >
+              {/* ✅ Read More Button */}
               <TouchableOpacity
-               
+                onPress={() => {
+                  if (crop?.readmoreUrl && crop.readmoreUrl.trim() !== "") {
+                    Linking.openURL(crop.readmoreUrl);
+                  } else {
+                    alert("No link available");
+                  }
+                }}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -148,8 +132,8 @@ export default function ExpertCropReadMore({ navigation }) {
                 </Text>
               </TouchableOpacity>
 
+              {/* Speaker Button */}
               <TouchableOpacity
-              
                 style={{
                   backgroundColor: '#006644',
                   padding: 10,

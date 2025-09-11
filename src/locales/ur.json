@@ -42,14 +42,12 @@
   }
 ,
   "channels": {
-    "title": "چینلز",
-    "searchPlaceholder": "چینلز تلاش کریں",
-    "following": "فالو کیے گئے",
-    "discover": "دریافت کریں",
-    "channel1": {
-      "name": "کاشتکاری کے مشورے",
-      "description": "کسان کے لئے روزانہ مشورے"
-    },
+   "title": "چینلز",
+  "searchPlaceholder": "چینلز تلاش کریں...",
+  "following": "فالو کیے گئے",
+  "discover": "دریافت کریں",
+  "noFollowed": "آپ نے ابھی تک کوئی چینل فالو نہیں کیا۔",
+  "noData": "دریافت کے لئے کوئی چینلز دستیاب نہیں۔",
     "settings": "ترتیبات"
   },
   "channelmsg": {

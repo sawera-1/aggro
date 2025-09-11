@@ -150,3 +150,152 @@ export const getExpertByPhoneAndPassword = async (phone, password) => {
     throw error;
   }
 };
+  
+
+
+//user data farmer
+export const getUserData = async () => {
+  try {
+    const uid = auth().currentUser?.uid; // logged-in user ID
+    if (!uid) return null;
+
+    const doc = await firestore().collection("users").doc(uid).get();
+    if (doc.exists) {
+      return doc.data();
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.log("Error fetching user data:", error);
+    return null;
+  }
+};
+//expert
+
+
+export const getExpertData = async () => {
+  try {
+    const userId = auth().currentUser?.uid;
+    if (!userId) throw new Error('No user logged in');
+
+    const docSnap = await firestore().collection('users').doc(userId).get();
+
+    if (!docSnap.exists) {
+      throw new Error('No expert data found');
+    }
+
+    const data = docSnap.data();
+    if (data.role !== 'expert') {
+      throw new Error('Logged in user is not an expert');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching expert data:', error);
+    return null;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//for Channel
+export const getChannels = async () => {
+  try {
+    const snapshot = await firestore().collection("channels").get();
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    return data;
+  } catch (error) {
+    console.log("Error fetching channels:", error);
+    return [];
+  }
+};
+
+
+export const getChannelById = async (channelId) => {
+  const doc = await firestore().collection("channels").doc(channelId).get();
+  return doc.exists ? { id: doc.id, ...doc.data() } : null;
+};
+
+// Get total members count of a channel
+export const getChannelMembersCount = async (channelId) => {
+  const snapshot = await firestore()
+    .collection("channels")
+    .doc(channelId)
+    .collection("members")
+    .get();
+  return snapshot.size;
+};
+
+
+
+//for Quries
+export const getQueries = async () => {
+  try {
+    const snapshot = await firestore().collection("queries").get(); // RN Firebase syntax
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    console.log("Fetched Queries:", data); // Optional: debug log
+    return data;
+  } catch (error) {
+    console.error("Error fetching queries:", error);
+    return [];
+  }
+};
+
+
+
+
+// updates
+export const getGovtSchemes = async () => {
+  try {
+    let query = firestore().collection('govtSchemes');
+    // Try to order by createdAt (if field present and consistent)
+    query = query.orderBy('createdAt', 'desc');
+    const snapshot = await query.get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("Error fetching govtSchemes:", error);
+    // fallback: try without orderBy if orderBy caused an issue
+    try {
+      const snapshot = await firestore().collection('govtSchemes').get();
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (e) {
+      console.error("Fallback fetch failed:", e);
+      return [];
+    }
+  }
+};
+
+export const getCropInfo = async () => {
+  try {
+    let query = firestore().collection('cropInfo');
+    query = query.orderBy('createdAt', 'desc');
+    const snapshot = await query.get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("Error fetching cropInfo:", error);
+    try {
+      const snapshot = await firestore().collection('cropInfo').get();
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (e) {
+      console.error("Fallback fetch failed:", e);
+      return [];
+    }
+  }
+};

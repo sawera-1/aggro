@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, Image, ImageBackground, TouchableOpacity, TextInput } from 'react-native';
+import {  ScrollView, View, Text, Image, ImageBackground, TouchableOpacity, TextInput } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const OwnChannelDescription = ({ navigation, route }) => {
   const { t } = useTranslation();
   const { channelName, channelImage, channelDescription } = route.params;

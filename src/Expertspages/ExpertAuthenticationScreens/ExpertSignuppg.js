@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -16,7 +15,7 @@ import { useDispatch } from "react-redux";
 import { setConfirmation } from "../../redux/Slices/HomeDataSlice";
 import { sendExpertOtp } from "../../Helper/firebaseHelper";
 import { useTranslation } from "react-i18next";  // ✅ import
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const ExpertSignup = ({ navigation }) => {
   const { t } = useTranslation();  // ✅ translation hook
 

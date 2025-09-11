@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, SafeAreaView, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView,  ImageBackground } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PrivacyPolicy({ navigation }) {
   const { t } = useTranslation();

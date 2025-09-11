@@ -8,7 +8,7 @@ import FarmerStack from "./src/navigation/FarmerStack";
 import ExpertStack from "./src/navigation/ExpertStack";
 import IntroStack from "./src/navigation/IntroStack";
 import "./src/i18n";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
 const RootNavigator = () => {
@@ -42,9 +42,18 @@ export default function App() {
           />
         )}
 
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
+        <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+            <StatusBar
+              barStyle="light-content"
+              backgroundColor="#006644"
+              translucent={false}
+            />
+
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </SafeAreaView>
+        
       </PersistGate>
     </Provider>
   );

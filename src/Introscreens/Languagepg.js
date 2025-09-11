@@ -1,7 +1,8 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, Text, Image, TouchableOpacity, ImageBackground } from 'react-native';
+import {  ScrollView, Text, Image, TouchableOpacity, ImageBackground } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import i18next from '../i18n';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const LanguageScreen = ({ navigation }) => {
   return (

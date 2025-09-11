@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   View,
@@ -5,20 +6,19 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   ImageBackground,
-  Linking
+  Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ExpertGovtReadMore({ navigation }) {
+export default function ExpertGovtReadMore({ navigation, route }) {
   const { t } = useTranslation();
-
+  const { scheme } = route.params;   // ✅ Data passed from previous screen
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {/* Background Image */}
       <ImageBackground
         source={require('../../../images/background.jpg')}
         style={{ flex: 1 }}
@@ -35,14 +35,11 @@ export default function ExpertGovtReadMore({ navigation }) {
             elevation: 4
           }}
         >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{ marginRight: 10 }}
-          >
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
             <Icon name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-            {t('expertGovt.title')}
+            {t('govtReadMore.title')}
           </Text>
         </View>
 
@@ -61,7 +58,11 @@ export default function ExpertGovtReadMore({ navigation }) {
           >
             {/* Image */}
             <Image
-              source={require('../../../images/govt.png')}
+              source={
+                scheme.image
+                  ? { uri: scheme.image }
+                  : require('../../../images/govt.png') // fallback
+              }
               style={{
                 width: '100%',
                 height: 200,
@@ -72,49 +73,39 @@ export default function ExpertGovtReadMore({ navigation }) {
             />
 
             {/* Name */}
-            <Text
-              style={{
-                fontSize: 22,
-                fontWeight: 'bold',
-                color: '#006644',
-                marginBottom: 6
-              }}
-            >
-              {t('expertGovt.schemeName')}
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#006644', marginBottom: 6 }}>
+              {scheme.name || "Untitled"}
             </Text>
 
             {/* Description */}
-            <Text
-              style={{
-                fontSize: 15,
-                lineHeight: 22,
-                color: '#555',
-                marginBottom: 12
-              }}
-            >
-              {t('expertGovt.description')}
+            <Text style={{ fontSize: 15, lineHeight: 22, color: '#555', marginBottom: 12 }}>
+              {scheme.description || "No description available"}
             </Text>
 
-            {/* Dates */}
+            {/* Region */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>{t('expertGovt.startDate')}</Text> 01-Jan-2020
+              <Text style={{ fontWeight: 'bold' }}>Region: </Text>
+              {scheme.region || "Not Specified"}
             </Text>
+
+            {/* Created Date */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>{t('expertGovt.endDate')}</Text> 31-Dec-2030
+              <Text style={{ fontWeight: 'bold' }}>Created At: </Text>
+              {scheme.createdAt?.toDate
+                ? scheme.createdAt.toDate().toDateString()
+                : "N/A"}
             </Text>
 
             {/* Buttons Row */}
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginTop: 15,
-                justifyContent: 'space-between'
-              }}
-            >
-              {/* Read More */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 15, justifyContent: 'space-between' }}>
               <TouchableOpacity
-               
+                onPress={() => {
+                  if (scheme.link) {
+                    Linking.openURL(scheme.link);
+                  } else {
+                    alert("No link available");
+                  }
+                }}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -125,13 +116,11 @@ export default function ExpertGovtReadMore({ navigation }) {
                 }}
               >
                 <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
-                  {t('expertGovt.readMore')}
+                  {t('govtReadMore.readMore')}
                 </Text>
               </TouchableOpacity>
 
-              {/* Speaker */}
               <TouchableOpacity
-                
                 style={{
                   backgroundColor: '#006644',
                   padding: 10,

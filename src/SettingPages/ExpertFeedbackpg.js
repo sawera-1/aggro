@@ -4,7 +4,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getUserData } from "../Helper/firebaseHelper"; 
 
-export default function FeedbackPage({ navigation }) {
+export default function ExpertFeedback({ navigation }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 

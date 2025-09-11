@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   View,
   Text,
@@ -15,7 +14,7 @@ import CountryPicker from "react-native-country-picker-modal";
 import { useDispatch } from "react-redux";
 import { setUser, setRole } from "../../redux/Slices/HomeDataSlice";
 import { getExpertByPhoneAndPassword } from "../../Helper/firebaseHelper";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const ExpertLogin = ({ navigation }) => {
   const dispatch = useDispatch();
 

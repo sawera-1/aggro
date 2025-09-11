@@ -1,21 +1,42 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   Image,
   Modal,
-  SafeAreaView,
   ScrollView,
-  ImageBackground
+  ImageBackground,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from "react-native-safe-area-context";
+import { getUserData } from '../Helper/firebaseHelper'; // ✅ your helper function
 
 export default function SettingsScreen({ navigation }) {
   const { t } = useTranslation();
   const [logoutVisible, setLogoutVisible] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await getUserData();
+      setUser(data);
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#006644" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -46,11 +67,13 @@ export default function SettingsScreen({ navigation }) {
 
         <ScrollView contentContainerStyle={{ paddingVertical: 20 }}>
           {/* Profile */}
+          {/* Profile Section */}
           <View style={{ alignItems: 'center', marginBottom: 30 }}>
             <Image
-              source={require('../images/a.png')}
-              style={{ width: 80, height: 80, borderRadius: 40 }}
+              source={user?.dpImage ? { uri: user.dpImage } : require('../images/a.png')}
+              style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 2, borderColor: '#006644' }}
             />
+
             <Text
               style={{
                 fontSize: 18,
@@ -59,27 +82,18 @@ export default function SettingsScreen({ navigation }) {
                 color: '#006644'
               }}
             >
-              {t('settings.name')}
+              {user?.name || "No Name"}
             </Text>
+
             <Text style={{ color: '#006644', marginTop: 4 }}>
-              +123 456 7890
+              {user?.phoneNumber || "No Phone"}
             </Text>
           </View>
 
+
           {/* Menu Item: My Account */}
           <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: 15,
-              marginHorizontal: 15,
-              marginBottom: 10,
-              borderWidth: 1,
-              borderColor: '#006644',
-              borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.85)'
-            }}
+            style={menuStyle}
             onPress={() => navigation.navigate('FMyAccount')}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -93,18 +107,7 @@ export default function SettingsScreen({ navigation }) {
 
           {/* Menu Item: Privacy Policy */}
           <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: 15,
-              marginHorizontal: 15,
-              marginBottom: 10,
-              borderWidth: 1,
-              borderColor: '#006644',
-              borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.85)'
-            }}
+            style={menuStyle}
             onPress={() => navigation.navigate('FPrivacyPolicy')}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -118,18 +121,7 @@ export default function SettingsScreen({ navigation }) {
 
           {/* Menu Item: Language */}
           <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: 15,
-              marginHorizontal: 15,
-              marginBottom: 10,
-              borderWidth: 1,
-              borderColor: '#006644',
-              borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.85)'
-            }}
+            style={menuStyle}
             onPress={() => navigation.navigate('FLanguage')}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -143,18 +135,7 @@ export default function SettingsScreen({ navigation }) {
 
           {/* Menu Item: Feedback */}
           <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: 15,
-              marginHorizontal: 15,
-              marginBottom: 10,
-              borderWidth: 1,
-              borderColor: '#006644',
-              borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.85)'
-            }}
+            style={menuStyle}
             onPress={() => navigation.navigate('FarmerFeedback')}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -168,18 +149,7 @@ export default function SettingsScreen({ navigation }) {
 
           {/* Logout */}
           <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: 15,
-              marginHorizontal: 15,
-              marginBottom: 30,
-              borderWidth: 1,
-              borderColor: '#006644',
-              borderRadius: 10,
-              backgroundColor: 'rgba(255,255,255,0.85)'
-            }}
+            style={menuStyle}
             onPress={() => setLogoutVisible(true)}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -270,7 +240,7 @@ export default function SettingsScreen({ navigation }) {
                     }}
                     onPress={() => {
                       setLogoutVisible(false);
-                      // TODO: add your logout logic
+                      // TODO: call your logout helper here
                     }}
                   >
                     <Ionicons name="log-out" size={20} color="#fff" style={{ marginRight: 6 }} />
@@ -288,3 +258,15 @@ export default function SettingsScreen({ navigation }) {
   );
 }
 
+const menuStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: 15,
+  marginHorizontal: 15,
+  marginBottom: 10,
+  borderWidth: 1,
+  borderColor: '#006644',
+  borderRadius: 10,
+  backgroundColor: 'rgba(255,255,255,0.85)',
+};

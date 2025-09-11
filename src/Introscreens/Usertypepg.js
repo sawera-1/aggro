@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   Text,
   Image,
@@ -11,6 +10,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { setRole } from '../redux/Slices/HomeDataSlice';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const UserType = ({ navigation }) => {
   const { t } = useTranslation();

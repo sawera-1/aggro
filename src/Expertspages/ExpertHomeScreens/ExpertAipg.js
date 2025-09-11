@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TextInput, ScrollView, Image, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const ExpertAI= ({ navigation }) => {
   const { t } = useTranslation();
   return (
