@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../redux/Slices/HomeDataSlice';
 import { SafeAreaView } from "react-native-safe-area-context";
+import { verifyOtpAndSaveUser, verifyOtpForLogin } from "../../Helper/firebaseHelper";
+
 const FarmerOtp = ({ navigation, route }) => {
   const { confirmation, phone } = route.params;
   const { t } = useTranslation();
@@ -47,24 +49,36 @@ const FarmerOtp = ({ navigation, route }) => {
   };
 
   const handleConfirm = async (codeFromAuto = null) => {
-    const code = codeFromAuto || otp.join('');
-    if (code.length < 6) {
-      Alert.alert('Error', 'Enter full OTP');
-      return;
+  const code = codeFromAuto || otp.join('');
+  if (code.length < 6) {
+    Alert.alert('Error', 'Enter full OTP');
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    let user;
+
+    if (route.params?.mode === "signup") {
+      // Save farmer user in Firestore
+      user = await verifyOtpAndSaveUser(confirmation, code, { role: "farmer" });
+    } else {
+      // Login flow
+      user = await verifyOtpForLogin(confirmation, code);
     }
 
-    try {
-      setLoading(true);
-      const userCredential = await confirmation.confirm(code);
-      dispatch(setUser(userCredential.user));
-      navigation.replace('OtpSuccess');
-    } catch (error) {
-      console.error('OTP verification failed:', error.message);
-      navigation.replace('OtpFailure');
-    } finally {
-      setLoading(false);
-    }
-  };
+    dispatch(setUser(user));
+    navigation.replace("OtpSuccess");
+
+  } catch (error) {
+    console.error("OTP verification failed:", error.message);
+    navigation.replace("OtpFailure");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

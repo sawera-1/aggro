@@ -17,7 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const FarmerLogin = ({ navigation }) => {
   const { t } = useTranslation();
   const [phone, setPhone] = useState("");
-  const [countryCode, setCountryCode] = useState("PK"); // default Pakistan
+  const [countryCode, setCountryCode] = useState("PK"); 
   const [callingCode, setCallingCode] = useState("92");
   const [showPad, setShowPad] = useState(false);
 
@@ -181,7 +181,7 @@ const FarmerLogin = ({ navigation }) => {
             {t("farmerLogin.noAccount")}{" "}
             <Text
               style={{ fontWeight: "bold", fontSize: 20 }}
-              onPress={() => navigation.navigate("Farmersignup")}
+              onPress={() => navigation.navigate("FarmerSignup")}
             >
               {t("farmerLogin.signup")}
             </Text>

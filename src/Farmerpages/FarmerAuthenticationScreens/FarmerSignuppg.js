@@ -157,15 +157,16 @@ const FarmerSignup = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
 
-          {/* Already have account? Login */}
+          {/* Already have account Login */}
           <Text style={{ color: "#006644", fontSize: 18 }}>
             {t("farmerSignup.alreadyAccount")}{" "}
-            <Text
-              style={{ fontWeight: "bold", fontSize: 18 }}
-              onPress={() => navigation.navigate("FarmerLogin")}
-            >
-              {t("farmerSignup.login")}
-            </Text>
+           <Text
+  style={{ fontWeight: "bold", fontSize: 18 }}
+  onPress={() => navigation.navigate("FarmerLogin")}
+>
+  {t("farmerSignup.login")}
+</Text>
+
           </Text>
         </ScrollView>
       </ImageBackground>

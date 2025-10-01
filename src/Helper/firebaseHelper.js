@@ -1,30 +1,33 @@
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 
-// Send OTP
+/* ------------------------------- FARMER AUTH ------------------------------- */
+
+// ✅ Send OTP to user phone number
 export const sendOtp = async (phoneNumber) => {
   try {
-    const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
-    return confirmation;
+    const confirmation = await auth().signInWithPhoneNumber(phoneNumber); // Firebase sends SMS
+    return confirmation; // returns a confirmation object to verify later
   } catch (e) {
     console.error("Error sending OTP:", e);
     throw e;
   }
 };
 
-// Verify OTP and save user (for signup)
+// ✅ Verify OTP during signup and save user in Firestore
 export const verifyOtpAndSaveUser = async (confirmation, code, userData) => {
   try {
-    const userCredential = await confirmation.confirm(code);
+    const userCredential = await confirmation.confirm(code); // verify OTP entered by user
 
+    // Save user details in Firestore (under "users" collection)
     await firestore().collection("users").doc(userCredential.user.uid).set(
       {
         uid: userCredential.user.uid,
-        phoneNumber: userCredential.user.phoneNumber, 
-        role: userData.role,
-        createdAt: new Date().toISOString(),
+        phoneNumber: userCredential.user.phoneNumber,
+        role: userData.role, // e.g. "farmer"
+        createdAt: new Date().toISOString(), // save timestamp
       },
-      { merge: true }
+      { merge: true } // merge ensures existing data isn't overwritten
     );
 
     return userCredential.user;
@@ -34,7 +37,7 @@ export const verifyOtpAndSaveUser = async (confirmation, code, userData) => {
   }
 };
 
-// ✅ Check if user exists in Firestore
+// ✅ Check if a user already exists in Firestore by phone number
 export const checkIfUserExists = async (phone) => {
   const formatted = phone.trim(); 
   const snapshot = await firestore()
@@ -47,10 +50,10 @@ export const checkIfUserExists = async (phone) => {
     console.log("Found user:", doc.id, doc.data());
   });
 
-  return !snapshot.empty;
+  return !snapshot.empty; // true = exists, false = not found
 };
 
-// ✅ Verify OTP for login
+// ✅ Verify OTP for login (farmer)
 export const verifyOtpForLogin = async (confirmation, code) => {
   try {
     const userCredential = await confirmation.confirm(code);
@@ -60,9 +63,10 @@ export const verifyOtpForLogin = async (confirmation, code) => {
     throw e;
   }
 };
-//experts
 
-// ✅ Send OTP
+/* ------------------------------- EXPERT AUTH ------------------------------- */
+
+// ✅ Send OTP to expert
 export const sendExpertOtp = async (phoneNumber) => {
   try {
     const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
@@ -73,19 +77,19 @@ export const sendExpertOtp = async (phoneNumber) => {
   }
 };
 
-// ✅ Verify OTP & Save Expert Data
+// ✅ Verify OTP and save expert data in Firestore
 export const verifyExpertOtpAndSaveUser = async (confirmation, code, expertData) => {
   try {
     const userCredential = await confirmation.confirm(code);
 
-    // Save in Firestore
+    // Save expert details in Firestore
     await firestore().collection("users").doc(userCredential.user.uid).set(
       {
         uid: userCredential.user.uid,
         phoneNumber: userCredential.user.phoneNumber,
         role: "expert",
         name: expertData.name,
-        password: expertData.password, // ⚠️ In production, NEVER store plain password. Use hashing.
+        password: expertData.password, // ⚠️ Should be hashed in production!
         experience: expertData.experience,
         specialization: expertData.specialization,
         createdAt: new Date().toISOString(),
@@ -100,7 +104,7 @@ export const verifyExpertOtpAndSaveUser = async (confirmation, code, expertData)
   }
 };
 
-// ✅ Login check by phone + password
+// ✅ Expert login using phone + password
 export const loginExpert = async (phone, password) => {
   try {
     const snapshot = await firestore()
@@ -126,11 +130,11 @@ export const loginExpert = async (phone, password) => {
     throw e;
   }
 };
-//login
 
-// ✅ Expert Login (Phone + Password)
+// ✅ Alternative Expert login (Phone + Password) with formatted phone
 export const getExpertByPhoneAndPassword = async (phone, password) => {
   try {
+    // Normalize phone: add +92 if missing
     const normalizedPhone = phone.startsWith("+") ? phone : `+92${phone.replace(/^0+/, "")}`;
 
     const snapshot = await firestore()
@@ -144,158 +148,155 @@ export const getExpertByPhoneAndPassword = async (phone, password) => {
       return null; // No match
     }
 
-    return snapshot.docs[0].data(); // Return first matched expert
+    return snapshot.docs[0].data(); // Return expert data
   } catch (error) {
     console.error("Error fetching expert:", error);
     throw error;
   }
 };
-  
 
+/* ------------------------------- USER DATA ------------------------------- */
 
-//user data farmer
+// ✅ Get current logged-in farmer's data
 export const getUserData = async () => {
   try {
     const uid = auth().currentUser?.uid; // logged-in user ID
     if (!uid) return null;
 
     const doc = await firestore().collection("users").doc(uid).get();
-    if (doc.exists) {
-      return doc.data();
-    } else {
-      return null;
-    }
+    return doc.exists ? doc.data() : null;
   } catch (error) {
     console.log("Error fetching user data:", error);
     return null;
   }
 };
-//expert
 
-
+// ✅ Get current logged-in expert's data
 export const getExpertData = async () => {
   try {
     const userId = auth().currentUser?.uid;
-    if (!userId) throw new Error('No user logged in');
+    if (!userId) throw new Error("No user logged in");
 
-    const docSnap = await firestore().collection('users').doc(userId).get();
-
-    if (!docSnap.exists) {
-      throw new Error('No expert data found');
-    }
+    const docSnap = await firestore().collection("users").doc(userId).get();
+    if (!docSnap.exists) throw new Error("No expert data found");
 
     const data = docSnap.data();
-    if (data.role !== 'expert') {
-      throw new Error('Logged in user is not an expert');
-    }
+    if (data.role !== "expert") throw new Error("Logged in user is not an expert");
 
     return data;
   } catch (error) {
-    console.error('Error fetching expert data:', error);
+    console.error("Error fetching expert data:", error);
     return null;
   }
 };
 
+/* ------------------------------- CHANNELS ------------------------------- */
 
-
-
-
-
-
-
-
-
-
-
-
-
-//for Channel
+// ✅ Get all channels
 export const getChannels = async () => {
   try {
     const snapshot = await firestore().collection("channels").get();
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    return data;
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
     console.log("Error fetching channels:", error);
     return [];
   }
 };
 
-
+// ✅ Get single channel by ID
 export const getChannelById = async (channelId) => {
   const doc = await firestore().collection("channels").doc(channelId).get();
   return doc.exists ? { id: doc.id, ...doc.data() } : null;
 };
 
-// Get total members count of a channel
+// ✅ Get number of members in a channel
 export const getChannelMembersCount = async (channelId) => {
   const snapshot = await firestore()
     .collection("channels")
     .doc(channelId)
     .collection("members")
     .get();
-  return snapshot.size;
+  return snapshot.size; // returns count
 };
 
+/* ------------------------------- QUERIES ------------------------------- */
 
-
-//for Quries
+// ✅ Get all queries (from farmers to experts)
 export const getQueries = async () => {
   try {
-    const snapshot = await firestore().collection("queries").get(); // RN Firebase syntax
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    console.log("Fetched Queries:", data); // Optional: debug log
-    return data;
+    const snapshot = await firestore().collection("queries").get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
     console.error("Error fetching queries:", error);
     return [];
   }
 };
 
+/* ------------------------------- UPDATES ------------------------------- */
 
-
-
-// updates
+// ✅ Get government schemes
 export const getGovtSchemes = async () => {
   try {
-    let query = firestore().collection('govtSchemes');
-    // Try to order by createdAt (if field present and consistent)
-    query = query.orderBy('createdAt', 'desc');
-    const snapshot = await query.get();
+    const snapshot = await firestore().collection("govtSchemes").get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
     console.error("Error fetching govtSchemes:", error);
-    // fallback: try without orderBy if orderBy caused an issue
-    try {
-      const snapshot = await firestore().collection('govtSchemes').get();
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (e) {
-      console.error("Fallback fetch failed:", e);
-      return [];
-    }
+    return [];
   }
 };
 
+// ✅ Get crop information
 export const getCropInfo = async () => {
   try {
-    let query = firestore().collection('cropInfo');
-    query = query.orderBy('createdAt', 'desc');
-    const snapshot = await query.get();
+    const snapshot = await firestore().collection("cropInfo").get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
     console.error("Error fetching cropInfo:", error);
-    try {
-      const snapshot = await firestore().collection('cropInfo').get();
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (e) {
-      console.error("Fallback fetch failed:", e);
-      return [];
-    }
+    return [];
+  }
+};
+
+/* -------------------- USER DATA -------------------- */
+
+
+// ✅ Update logged-in user's data
+export const updateUserData = async (data) => {
+  try {
+    const uid = auth().currentUser?.uid;
+    if (!uid) throw new Error("No user logged in");
+
+    await firestore().collection("users").doc(uid).set(data, { merge: true });
+    return true;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
+  }
+};
+
+//--------------------------------
+// 🔹 Cloudinary Image Upload
+//--------------------------------
+export const uploadImageToCloudinary = async (imageFile) => {
+  const CLOUD_NAME = "dumgs9cp4";
+  const UPLOAD_PRESET = "react_native_uploads";
+
+  try {
+    const data = new FormData();
+    data.append("file", imageFile);
+    data.append("upload_preset", UPLOAD_PRESET);
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: data,
+      }
+    );
+
+    const result = await res.json();
+    return result.secure_url;
+  } catch (err) {
+    console.error("Cloudinary upload failed", err);
+    throw err;
   }
 };

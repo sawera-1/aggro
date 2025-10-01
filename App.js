@@ -11,10 +11,11 @@ import "./src/i18n";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
+
 const RootNavigator = () => {
   const role = useSelector((state) => state.home.role);
 
-  switch ("expert") {//chng into role after cheakin
+  switch (role) {//chng into role after cheakin
     case "farmer":
       return <FarmerStack />;
     case "expert":

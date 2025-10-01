@@ -13,7 +13,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getUserData } from '../Helper/firebaseHelper'; // ✅ your helper function
+import { getUserData } from '../Helper/firebaseHelper'; 
+import auth from '@react-native-firebase/auth';
 
 export default function SettingsScreen({ navigation }) {
   const { t } = useTranslation();
@@ -227,27 +228,33 @@ export default function SettingsScreen({ navigation }) {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      paddingVertical: 12,
-                      paddingHorizontal: 18,
-                      borderRadius: 10,
-                      flex: 1,
-                      justifyContent: 'center',
-                      backgroundColor: '#cc0000',
-                      marginLeft: 8
-                    }}
-                    onPress={() => {
-                      setLogoutVisible(false);
-                      // TODO: call your logout helper here
-                    }}
-                  >
-                    <Ionicons name="log-out" size={20} color="#fff" style={{ marginRight: 6 }} />
-                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                      {t('settings.logout')}
-                    </Text>
-                  </TouchableOpacity>
+  style={{
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#cc0000',
+    marginLeft: 8
+  }}
+  onPress={async () => {
+    try {
+      await auth().signOut(); // ✅ logs out the user
+      setLogoutVisible(false);
+      navigation.replace('FarmerLogin'); // redirect to login
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  }}
+>
+  <Ionicons name="log-out" size={20} color="#fff" style={{ marginRight: 6 }} />
+  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
+    {t('settings.logout')}
+  </Text>
+</TouchableOpacity>
+
                 </View>
               </View>
             </View>

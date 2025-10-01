@@ -1,105 +1,130 @@
-import React, { useState } from 'react';
-import {  View, Text, TouchableOpacity, Image, TextInput, ScrollView, Modal } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import Entypo from 'react-native-vector-icons/Entypo';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { useRoute } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';  
-import { SafeAreaView } from "react-native-safe-area-context";
-const ChatMsgScreen = ({ navigation }) => {
-  const [menuVisible, setMenuVisible] = useState(false);
-  const route = useRoute();
-  const { t } = useTranslation();  
- 
-  const { name, image, phone } = route.params || {};
+// ChatScreen.js
+import React, { useEffect, useState, useCallback } from "react";
+import { View, Text, TextInput, Button, FlatList, StyleSheet } from "react-native";
+import firestore from "@react-native-firebase/firestore";
+
+const ChatScreen = ({ current_user, second_user }) => {
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
+
+  // ✅ Create unique chatId (always same for both users)
+  const chatId =
+    current_user < second_user
+      ? `${current_user}_${second_user}`
+      : `${second_user}_${current_user}`;
+
+  // ✅ Listen for real-time messages
+  useEffect(() => {
+    const unsubscribe = firestore()
+      .collection("chats")
+      .doc(chatId)
+      .collection("messages")
+      .orderBy("createdAt", "desc")
+      .onSnapshot((querySnapshot) => {
+        const msgs = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        }));
+        setMessages(msgs);
+      });
+
+    return () => unsubscribe();
+  }, [chatId]);
+
+  // ✅ Send message
+  const sendMessage = useCallback(async () => {
+    if (!text.trim()) return;
+
+    await firestore()
+      .collection("chats")
+      .doc(chatId)
+      .collection("messages")
+      .add({
+        text,
+        senderId: current_user,
+        receiverId: second_user,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+
+    setText("");
+  }, [text, chatId, current_user, second_user]);
+
+  // ✅ Render each message bubble
+  const renderItem = ({ item }) => (
+    <View
+      style={[
+        styles.messageContainer,
+        item.senderId === current_user ? styles.myMessage : styles.theirMessage,
+      ]}
+    >
+      <Text style={styles.messageText}>{item.text}</Text>
+      <Text style={styles.timeText}>
+        {item.createdAt?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+      </Text>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#e9e9e1' }}>
-      
-      {/* Top Bar */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#006644', paddingVertical: 10, paddingHorizontal: 10 }}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
+    <View style={styles.container}>
+      <FlatList
+        data={messages}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        inverted
+      />
 
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate('ChatDes', {
-              chatName: name,
-              chatImage: image,
-              chatPhone: phone
-            })
-          }
-        >
-          <Image
-            source={image || require('../../../images/chdummyimg.png')}
-            style={{ width: 40, height: 40, borderRadius: 20, marginHorizontal: 10 }}
-          />
-        </TouchableOpacity>
-
-        <Text style={{ color: '#fff', fontSize: 18, flex: 1 }}>{name || t('chatMsg.unknown')}</Text>
-      </View>
-
-      {/* Chat Body */}
-      <ScrollView style={{ flex: 1, padding: 10 }}>
-        <View style={{ backgroundColor: '#DCF8C6', padding: 10, borderRadius: 10, alignSelf: 'flex-start', marginBottom: 10 }}>
-          <Text>Hello! This is a test message.</Text>
-        </View>
-        <View style={{ backgroundColor: '#fff', padding: 10, borderRadius: 10, alignSelf: 'flex-end', marginBottom: 10 }}>
-          <Text>Hi! This is a reply.</Text>
-        </View>
-      </ScrollView>
-
-      {/* Bottom Bar */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 5, backgroundColor: '#006644', borderTopWidth: 1, borderColor: '#006644' }}>
-        <TouchableOpacity onPress={() => setMenuVisible(true)}>
-          <Entypo name="plus" size={24} color="#031501ff" style={{ marginHorizontal: 5 }} />
-        </TouchableOpacity>
-
+      <View style={styles.inputContainer}>
         <TextInput
-          placeholder={t('chatMsg.typeMessage')}
-          style={{ flex: 1, backgroundColor: '#e9e9e1', borderRadius: 20, paddingHorizontal: 15, marginHorizontal: 5 }}
+          value={text}
+          onChangeText={setText}
+          placeholder="Type a message..."
+          style={styles.input}
         />
-
-        <TouchableOpacity>
-          <Ionicons name="camera" size={24} color="#031501ff" style={{ marginHorizontal: 5 }} />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <FontAwesome name="microphone" size={24} color="#031501ff" style={{ marginHorizontal: 5 }} />
-        </TouchableOpacity>
+        <Button title="Send" onPress={sendMessage} />
       </View>
-
-      {/* Popup Menu */}
-      <Modal transparent animationType="fade" visible={menuVisible} onRequestClose={() => setMenuVisible(false)}>
-        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPressOut={() => setMenuVisible(false)}>
-          <View style={{ position: 'absolute', bottom: 60, left: 10, backgroundColor: '#e9e9e9', borderRadius: 10, padding: 10, elevation: 5 }}>
-            <TouchableOpacity style={{ flexDirection: 'row', paddingVertical: 8 }}>
-              <Ionicons name="camera" size={20} color="#031501ff" />
-            <Text style={{ marginLeft: 10 }}>{t('chatMsg.camera')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={{ flexDirection: 'row', paddingVertical: 8 }}>
-              <MaterialIcons name="insert-drive-file" size={20} color="#031501ff" />
-           <Text style={{ marginLeft: 10 }}>{t('chatMsg.documents')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={{ flexDirection: 'row', paddingVertical: 8 }}>
-              <Ionicons name="location" size={20} color="#031501ff" />
-              <Text style={{ marginLeft: 10 }}>{t('chatMsg.location')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={{ flexDirection: 'row', paddingVertical: 8 }}>
-              <Ionicons name="images" size={20} color="#031501ff" />
-               <Text style={{ marginLeft: 10 }}>{t('chatMsg.photos')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={{ flexDirection: 'row', paddingVertical: 8 }}>
-              <Ionicons name="person" size={20} color="#031501ff" />
-               <Text style={{ marginLeft: 10 }}>{t('chatMsg.contact')}</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-    </SafeAreaView>
+    </View>
   );
 };
 
-export default ChatMsgScreen;
+export default ChatScreen;
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  inputContainer: {
+    flexDirection: "row",
+    padding: 10,
+    borderTopWidth: 1,
+    borderColor: "#ddd",
+    backgroundColor: "#fff",
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    marginRight: 10,
+  },
+  messageContainer: {
+    marginVertical: 5,
+    padding: 10,
+    borderRadius: 10,
+    maxWidth: "70%",
+  },
+  myMessage: {
+    backgroundColor: "#DCF8C6",
+    alignSelf: "flex-end",
+  },
+  theirMessage: {
+    backgroundColor: "#fff",
+    alignSelf: "flex-start",
+  },
+  messageText: { fontSize: 16 },
+  timeText: {
+    fontSize: 10,
+    color: "#555",
+    marginTop: 2,
+    alignSelf: "flex-end",
+  },
+});
