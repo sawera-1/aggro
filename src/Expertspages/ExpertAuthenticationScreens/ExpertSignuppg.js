@@ -9,34 +9,26 @@ import {
   ImageBackground,
   Alert,
 } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
 import CountryPicker from "react-native-country-picker-modal";
-import { useDispatch } from "react-redux";
-import { setConfirmation } from "../../redux/Slices/HomeDataSlice";
 import { sendExpertOtp } from "../../Helper/firebaseHelper";
-import { useTranslation } from "react-i18next";  // ✅ import
+import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 const ExpertSignup = ({ navigation }) => {
-  const { t } = useTranslation();  // ✅ translation hook
+  const { t } = useTranslation();
 
   const [name, setName] = useState("");
   const [qualification, setQualification] = useState("");
   const [specialization, setSpecialization] = useState("");
   const [experience, setExperience] = useState("");
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [countryCode, setCountryCode] = useState("PK");
+  const [callingCode, setCallingCode] = useState("92");
   const [loading, setLoading] = useState(false);
 
-  // Country Picker states
-  const [countryCode, setCountryCode] = useState("PK"); // Default Pakistan
-  const [callingCode, setCallingCode] = useState("92");
-
-  const dispatch = useDispatch();
-
   const handleSignup = async () => {
-    if (!name || !qualification || !specialization || !experience || !phone || !password) {
-      Alert.alert(t("errors.fillAllFields")); 
+    if (!name || !qualification || !specialization || !experience || !phone) {
+      Alert.alert(t("errors.fillAllFields"));
       return;
     }
 
@@ -45,15 +37,13 @@ const ExpertSignup = ({ navigation }) => {
     try {
       setLoading(true);
       const confirmation = await sendExpertOtp(fullPhone);
-
-      dispatch(setConfirmation(confirmation));
-
       navigation.navigate("ExpertOtp", {
         phone: fullPhone,
-        expertData: { name, qualification, specialization, experience, password },
+        expertData: { name, qualification, specialization, experience },
+        confirmation,
       });
-    } catch (e) {
-      Alert.alert(t("errors.error"), e.message); 
+    } catch (error) {
+      Alert.alert(t("errors.error"), error.message);
     } finally {
       setLoading(false);
     }
@@ -81,23 +71,35 @@ const ExpertSignup = ({ navigation }) => {
           />
 
           {/* Title */}
-          <Text style={{ fontSize: 28, fontWeight: "bold", color: "#006644", marginBottom: 10 }}>
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: "bold",
+              color: "#006644",
+              marginBottom: 10,
+            }}
+          >
             {t("expertSignup.title")}
           </Text>
-          <Text style={{ fontSize: 14, color: "#006644", marginBottom: 25 }}>
+          <Text
+            style={{
+              fontSize: 14,
+              color: "#006644",
+              marginBottom: 25,
+              textAlign: "center",
+            }}
+          >
             {t("expertSignup.subtitle")}
           </Text>
 
-          {/* Full Name */}
+          {/* Input fields */}
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder={t("expertSignup.fullName")}   // ✅ translated placeholder
+            placeholder={t("expertSignup.fullName")}
             placeholderTextColor="#006644"
             style={styles.input}
           />
-
-          {/* Qualification */}
           <TextInput
             value={qualification}
             onChangeText={setQualification}
@@ -105,8 +107,6 @@ const ExpertSignup = ({ navigation }) => {
             placeholderTextColor="#006644"
             style={styles.input}
           />
-
-          {/* Specialization */}
           <TextInput
             value={specialization}
             onChangeText={setSpecialization}
@@ -114,8 +114,6 @@ const ExpertSignup = ({ navigation }) => {
             placeholderTextColor="#006644"
             style={styles.input}
           />
-
-          {/* Experience */}
           <TextInput
             value={experience}
             onChangeText={setExperience}
@@ -125,7 +123,7 @@ const ExpertSignup = ({ navigation }) => {
             style={styles.input}
           />
 
-          {/* Phone with Country Picker */}
+          {/* Phone input with country picker */}
           <View style={styles.phoneContainer}>
             <CountryPicker
               countryCode={countryCode}
@@ -133,9 +131,9 @@ const ExpertSignup = ({ navigation }) => {
               withFlag
               withCallingCode
               withModal
-              onSelect={(country) => {
-                setCountryCode(country.cca2);
-                setCallingCode(country.callingCode[0]);
+              onSelect={(c) => {
+                setCountryCode(c.cca2);
+                setCallingCode(c.callingCode[0]);
               }}
             />
             <Text style={{ color: "#006644", fontSize: 16, marginHorizontal: 8 }}>
@@ -151,44 +149,20 @@ const ExpertSignup = ({ navigation }) => {
             />
           </View>
 
-          {/* Password */}
-          <View style={styles.passwordContainer}>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder={t("expertSignup.password")}
-              placeholderTextColor="#006644"
-              secureTextEntry={!showPassword}
-              style={{ flex: 1, fontSize: 16, color: "#006644" }}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color="#006644" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Signup Button */}
+          {/* Continue button */}
           <TouchableOpacity
             onPress={handleSignup}
-            style={{
-              width: "100%",
-              borderRadius: 10,
-              backgroundColor: "#006644",
-              alignItems: "center",
-              marginBottom: 20,
-              opacity: loading ? 0.6 : 1,
-            }}
+            style={styles.button}
             disabled={loading}
           >
-            <Text style={{ paddingVertical: 12, color: "#fff", fontSize: 16, fontWeight: "bold" }}>
-              {loading ? t("expertSignup.continue") : t("expertSignup.continue")}
-            </Text>
+            <Text style={styles.buttonText}>{t("expertSignup.continue")}</Text>
           </TouchableOpacity>
 
-          {/* Login Redirect */}
-          <Text style={{ color: "#006644" }}>
+          {/* Already have an account? Login */}
+          <Text style={{ color: "#006644", marginTop: 10 }}>
             {t("expertSignup.alreadyAccount")}{" "}
             <Text
-              style={{ fontWeight: "bold", fontSize: 18 }}
+              style={{ fontWeight: "bold", fontSize: 16 }}
               onPress={() => navigation.navigate("ExpertLogin")}
             >
               {t("expertSignup.login")}
@@ -206,7 +180,6 @@ const styles = {
     borderWidth: 2,
     borderRadius: 10,
     width: "100%",
-    backgroundColor: "rgba(255,255,255,0.1)",
     paddingHorizontal: 10,
     paddingVertical: 16,
     fontSize: 16,
@@ -220,22 +193,22 @@ const styles = {
     borderWidth: 2,
     borderRadius: 10,
     width: "100%",
-    backgroundColor: "rgba(255,255,255,0.1)",
     paddingHorizontal: 10,
     paddingVertical: 5,
     marginBottom: 15,
   },
-  passwordContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderColor: "#006644",
-    borderWidth: 2,
-    borderRadius: 10,
+  button: {
     width: "100%",
-    backgroundColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: "#006644",
+    alignItems: "center",
     marginBottom: 20,
+  },
+  buttonText: {
+    paddingVertical: 12,
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 };
 

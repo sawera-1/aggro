@@ -1,10 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+// Initial state
 const initialState = {
-  user: null,          // Firebase user object
-  role: "",            // "farmer" or "expert"
-  loading: false,
-  confirmation: null,  // store Firebase OTP confirmation object here
+  user: null,         // Firebase user object
+  role: "",           // "farmer" or "expert"
+  loading: false,     
+  confirmation: null, // Firebase OTP confirmation object
 };
 
 const homeSlice = createSlice({

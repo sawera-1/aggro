@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   View,
@@ -12,10 +11,29 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Tts from 'react-native-tts';
 
 export default function ExpertGovtReadMore({ navigation, route }) {
   const { t } = useTranslation();
-  const { scheme } = route.params;   // ✅ Data passed from previous screen
+  const { scheme } = route.params;
+
+  //  Function for TTS
+const speakEnglish = () => {
+  const details = `
+    ${scheme.name || "Untitled"}.
+    ${scheme.description || "No description available"}.
+    Region: ${scheme.region || "Not Specified"}.
+    Start Date: ${scheme.startDate || "N/A"}.
+    End Date: ${scheme.endDate || "N/A"}.
+  `;
+
+  Tts.stop();
+  Tts.setDefaultLanguage("en-US");
+  Tts.setDefaultVoice("en-us-x-tpf-local"); 
+  Tts.setDefaultRate(0.45);
+  Tts.setDefaultPitch(1.0);
+  Tts.speak(details);
+};
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -24,7 +42,7 @@ export default function ExpertGovtReadMore({ navigation, route }) {
         style={{ flex: 1 }}
         imageStyle={{ opacity: 0.9 }}
       >
-        {/* Top Bar */}
+        {/*  Top Bar */}
         <View
           style={{
             flexDirection: 'row',
@@ -43,7 +61,7 @@ export default function ExpertGovtReadMore({ navigation, route }) {
           </Text>
         </View>
 
-        {/* Scrollable Content */}
+        {/*  Scrollable Content */}
         <ScrollView contentContainerStyle={{ padding: 15, flexGrow: 1 }}>
           <View
             style={{
@@ -58,18 +76,8 @@ export default function ExpertGovtReadMore({ navigation, route }) {
           >
             {/* Image */}
             <Image
-              source={
-                scheme.image
-                  ? { uri: scheme.image }
-                  : require('../../../images/govt.png') // fallback
-              }
-              style={{
-                width: '100%',
-                height: 200,
-                borderRadius: 8,
-                resizeMode: 'cover',
-                marginBottom: 15
-              }}
+              source={scheme.image ? { uri: scheme.image } : require('../../../images/govt.png')}
+              style={{ width: '100%', height: 200, borderRadius: 8, resizeMode: 'cover', marginBottom: 15 }}
             />
 
             {/* Name */}
@@ -82,54 +90,75 @@ export default function ExpertGovtReadMore({ navigation, route }) {
               {scheme.description || "No description available"}
             </Text>
 
+
+
             {/* Region */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
               <Text style={{ fontWeight: 'bold' }}>Region: </Text>
               {scheme.region || "Not Specified"}
             </Text>
 
-            {/* Created Date */}
+            {/* Start Date */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>Created At: </Text>
-              {scheme.createdAt?.toDate
-                ? scheme.createdAt.toDate().toDateString()
-                : "N/A"}
+              <Text style={{ fontWeight: 'bold' }}>Start Date: </Text>
+              {scheme.startDate || "N/A"}
             </Text>
 
-            {/* Buttons Row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 15, justifyContent: 'space-between' }}>
-              <TouchableOpacity
-                onPress={() => {
-                  if (scheme.link) {
-                    Linking.openURL(scheme.link);
-                  } else {
-                    alert("No link available");
-                  }
-                }}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#006644',
-                  paddingVertical: 10,
-                  paddingHorizontal: 15,
-                  borderRadius: 8
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
-                  {t('govtReadMore.readMore')}
-                </Text>
-              </TouchableOpacity>
+            {/* End Date */}
+            <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
+              <Text style={{ fontWeight: 'bold' }}>End Date: </Text>
+              {scheme.endDate || "N/A"}
+            </Text>
 
-              <TouchableOpacity
-                style={{
-                  backgroundColor: '#006644',
-                  padding: 10,
-                  borderRadius: 50
-                }}
-              >
-                <Icon name="volume-high" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
+            {/* URL */}
+
+            {scheme.url ? (
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+                {/* Read More Button */}
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(scheme.url)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#006644',
+                    paddingVertical: 10,
+                    paddingHorizontal: 15,
+                    borderRadius: 8,
+                    marginRight: 10, 
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
+                    {t('govtReadMore.readMore')}
+                  </Text>
+                  <View
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: '#e9e9e1',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginLeft: 5
+                    }}
+                  >
+                    <Icon name="arrow-forward" size={14} color="#006644" />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Voice Button */}
+                <TouchableOpacity
+                  onPress={speakEnglish}
+                  style={{
+                    backgroundColor: '#006644',
+                    padding: 10,
+                    borderRadius: 25,
+                  }}
+                >
+                  <Icon name="volume-high" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
           </View>
         </ScrollView>
       </ImageBackground>

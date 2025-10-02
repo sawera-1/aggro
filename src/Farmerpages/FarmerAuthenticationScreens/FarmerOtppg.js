@@ -4,8 +4,8 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Image,
   ScrollView,
+  Image,
   ImageBackground,
   ActivityIndicator,
   Alert,
@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../redux/Slices/HomeDataSlice';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { verifyOtpAndSaveUser, verifyOtpForLogin } from "../../Helper/firebaseHelper";
+import { verifyOtpForLogin } from "../../Helper/firebaseHelper";
 
 const FarmerOtp = ({ navigation, route }) => {
   const { confirmation, phone } = route.params;
@@ -33,9 +33,7 @@ const FarmerOtp = ({ navigation, route }) => {
       setOtp(newOtp);
       setCurrentIndex(currentIndex + 1);
 
-      if (currentIndex + 1 === 6) {
-        handleConfirm(newOtp.join(''));
-      }
+      if (currentIndex + 1 === 6) handleConfirm(newOtp.join(''));
     }
   };
 
@@ -49,177 +47,73 @@ const FarmerOtp = ({ navigation, route }) => {
   };
 
   const handleConfirm = async (codeFromAuto = null) => {
-  const code = codeFromAuto || otp.join('');
-  if (code.length < 6) {
-    Alert.alert('Error', 'Enter full OTP');
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    let user;
-
-    if (route.params?.mode === "signup") {
-      // Save farmer user in Firestore
-      user = await verifyOtpAndSaveUser(confirmation, code, { role: "farmer" });
-    } else {
-      // Login flow
-      user = await verifyOtpForLogin(confirmation, code);
+    const code = codeFromAuto || otp.join('');
+    if (code.length < 6) {
+      Alert.alert('Error', 'Enter full OTP');
+      return;
     }
 
-    dispatch(setUser(user));
-    navigation.replace("OtpSuccess");
+    try {
+      setLoading(true);
+      // ✅ Verify OTP and get user
+      const user = await verifyOtpForLogin(confirmation, code);
+      if (!user) {
+        Alert.alert("No account found", "Please sign up first.");
+        navigation.replace("FarmerSignup");
+        return;
+      }
 
-  } catch (error) {
-    console.error("OTP verification failed:", error.message);
-    navigation.replace("OtpFailure");
-  } finally {
-    setLoading(false);
-  }
-};
-
+      dispatch(setUser(user));
+      navigation.replace("OtpSuccess");
+    } catch (error) {
+      console.error("OTP verification failed:", error.message);
+      Alert.alert("Invalid OTP", "Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ImageBackground
-        source={require('../../images/background.jpg')}
-        style={{ flex: 1 }}
-        resizeMode="cover"
-      >
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 20,
-          }}
-        >
-          <Image
-            source={require('../../images/logodark.png')}
-            style={{ width: 200, height: 100, marginBottom: 20 }}
-          />
-
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: '600',
-              color: '#000',
-              textAlign: 'center',
-              marginBottom: 8,
-            }}
-          >
+      <ImageBackground source={require('../../images/background.jpg')} style={{ flex: 1 }} resizeMode="cover">
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Image source={require('../../images/logodark.png')} style={{ width: 200, height: 100, marginBottom: 20 }} />
+          <Text style={{ fontSize: 20, fontWeight: '600', color: '#000', textAlign: 'center', marginBottom: 8 }}>
             {t('farmerOtp.title')}
           </Text>
           <Text style={{ color: '#555', textAlign: 'center', marginBottom: 30 }}>
             {t('farmerOtp.subtitle')}
           </Text>
 
-          {/* OTP Boxes */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 30 }}>
-            <TextInput style={{
-              borderWidth: 1,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              width: 50,
-              height: 50,
-              textAlign: 'center',
-              fontSize: 18,
-              backgroundColor: '#fff',
-              marginHorizontal: 3,
-            }} value={otp[0]} editable={false} />
-            <TextInput style={{
-              borderWidth: 1,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              width: 50,
-              height: 50,
-              textAlign: 'center',
-              fontSize: 18,
-              backgroundColor: '#fff',
-              marginHorizontal: 3,
-            }} value={otp[1]} editable={false} />
-            <TextInput style={{
-              borderWidth: 1,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              width: 50,
-              height: 50,
-              textAlign: 'center',
-              fontSize: 18,
-              backgroundColor: '#fff',
-              marginHorizontal: 3,
-            }} value={otp[2]} editable={false} />
-            <TextInput style={{
-              borderWidth: 1,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              width: 50,
-              height: 50,
-              textAlign: 'center',
-              fontSize: 18,
-              backgroundColor: '#fff',
-              marginHorizontal: 3,
-            }} value={otp[3]} editable={false} />
-            <TextInput style={{
-              borderWidth: 1,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              width: 50,
-              height: 50,
-              textAlign: 'center',
-              fontSize: 18,
-              backgroundColor: '#fff',
-              marginHorizontal: 3,
-            }} value={otp[4]} editable={false} />
-            <TextInput style={{
-              borderWidth: 1,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              width: 50,
-              height: 50,
-              textAlign: 'center',
-              fontSize: 18,
-              backgroundColor: '#fff',
-              marginHorizontal: 3,
-            }} value={otp[5]} editable={false} />
+            {otp.map((val, index) => (
+              <TextInput key={index} value={val} editable={false} style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 8,
+                width: 50,
+                height: 50,
+                textAlign: 'center',
+                fontSize: 18,
+                backgroundColor: '#fff',
+                marginHorizontal: 3,
+              }} />
+            ))}
           </View>
 
-          {/* Numeric Pad */}
-          <NumericPad
-            onPressNumber={handlePress}
-            onBackspace={handleBackspace}
-            onSubmit={handleConfirm}
-          />
+          <NumericPad onPressNumber={handlePress} onBackspace={handleBackspace} onSubmit={handleConfirm} />
 
-          {/* Confirm Button */}
           <TouchableOpacity
             disabled={loading}
-            style={{
-              backgroundColor: loading ? '#999' : '#006644',
-              padding: 15,
-              borderRadius: 8,
-              alignItems: 'center',
-              width: '60%',
-              marginTop: 20,
-            }}
+            style={{ backgroundColor: loading ? '#999' : '#006644', padding: 15, borderRadius: 8, alignItems: 'center', width: '60%', marginTop: 20 }}
             onPress={() => handleConfirm()}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={{ color: '#fff', fontSize: 16 }}>
-                {t('farmerOtp.confirm')}
-              </Text>
-            )}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 16 }}>{t('farmerOtp.confirm')}</Text>}
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>
     </SafeAreaView>
   );
 };
-
-
-
 
 export default FarmerOtp;

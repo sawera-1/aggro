@@ -84,7 +84,6 @@ export default function ExpertBottomTabs() {
           tabBarStyle: {
             display: tabBarVisible(route, [
               'ExpertGovtReadMore',
-              'ExpertMPriceReadMore',
               'ExpertCropReadMore',
             ]),
             backgroundColor: '#006644',

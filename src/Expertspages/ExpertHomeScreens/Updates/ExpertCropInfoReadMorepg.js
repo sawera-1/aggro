@@ -6,13 +6,29 @@ import {
   TouchableOpacity,
   ScrollView,
   ImageBackground,
-  Linking
+  Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Tts from 'react-native-tts';
 
 export default function ExpertCropReadMore({ navigation, route }) {
   const { crop } = route.params;
+
+  //  Function for TTS
+  const speakDetails = () => {
+    const details = `
+      Crop Name: ${crop?.name || "N/A"}.
+      Scientific Name: ${crop?.scientificName || "N/A"}.
+      Market Price: ${crop?.marketPrice || "N/A"}.
+      Season: ${crop?.season || "N/A"}.
+      Duration: ${crop?.duration || "N/A"}.
+      Water Requirement: ${crop?.waterRequirement || "N/A"}.
+      Soil Type: ${crop?.soilType || "N/A"}.
+      Yield Amount: ${crop?.yieldAmount || "N/A"}.
+    `;
+    Tts.speak(details);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -29,7 +45,7 @@ export default function ExpertCropReadMore({ navigation, route }) {
             backgroundColor: '#006644',
             paddingVertical: 12,
             paddingHorizontal: 15,
-            elevation: 4
+            elevation: 4,
           }}
         >
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
@@ -50,7 +66,7 @@ export default function ExpertCropReadMore({ navigation, route }) {
               shadowColor: '#000',
               shadowOpacity: 0.1,
               shadowRadius: 5,
-              elevation: 3
+              elevation: 3,
             }}
           >
             {/* Image */}
@@ -61,43 +77,41 @@ export default function ExpertCropReadMore({ navigation, route }) {
                 height: 200,
                 borderRadius: 8,
                 resizeMode: 'cover',
-                marginBottom: 15
+                marginBottom: 15,
               }}
             />
 
-            {/* Name */}
+            {/* Crop Info */}
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#006644', marginBottom: 6 }}>
               {crop?.name || "N/A"}
             </Text>
 
-            {/* Market Price */}
+            <Text style={{ fontSize: 16, color: '#333', marginBottom: 6 }}>
+              🔬 Scientific Name: {crop?.scientificName || "N/A"}
+            </Text>
+
             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 10 }}>
               💰 Market Price: {crop?.marketPrice || "N/A"}
             </Text>
 
-            {/* Description */}
             <Text style={{ fontSize: 15, lineHeight: 22, color: '#555', marginBottom: 12 }}>
-              {crop?.description || "No description available."}
+              🌱 Season: {crop?.season || "N/A"}
             </Text>
 
-            {/* Season */}
-            <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              🌱 Season: {crop?.cropSeason || "N/A"}
-            </Text>
-
-            {/* Duration */}
-            <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
+            <Text style={{ fontSize: 15, marginBottom: 4, color: '#333' }}>
               ⏳ Duration: {crop?.duration || "N/A"}
             </Text>
 
-            {/* Water Requirement */}
-            <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
+            <Text style={{ fontSize: 15, marginBottom: 4, color: '#333' }}>
               💧 Water: {crop?.waterRequirement || "N/A"}
             </Text>
 
-            {/* Soil Type */}
-            <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              🌍 Soil: {crop?.soilType || crop?.soiltype || "N/A"}
+            <Text style={{ fontSize: 15, marginBottom: 4, color: '#333' }}>
+              🌍 Soil: {crop?.soilType || "N/A"}
+            </Text>
+
+            <Text style={{ fontSize: 15, marginBottom: 4, color: '#333' }}>
+              📦 Yield Amount: {crop?.yieldAmount || "N/A"}
             </Text>
 
             {/* Buttons Row */}
@@ -106,14 +120,14 @@ export default function ExpertCropReadMore({ navigation, route }) {
                 flexDirection: 'row',
                 alignItems: 'center',
                 marginTop: 15,
-                justifyContent: 'space-between'
+                justifyContent: 'space-between',
               }}
             >
-              {/* ✅ Read More Button */}
+              {/*  Read More Button */}
               <TouchableOpacity
                 onPress={() => {
-                  if (crop?.readmoreUrl && crop.readmoreUrl.trim() !== "") {
-                    Linking.openURL(crop.readmoreUrl);
+                  if (crop?.url && crop.url.trim() !== "") {
+                    Linking.openURL(crop.url);
                   } else {
                     alert("No link available");
                   }
@@ -124,7 +138,7 @@ export default function ExpertCropReadMore({ navigation, route }) {
                   backgroundColor: '#006644',
                   paddingVertical: 10,
                   paddingHorizontal: 15,
-                  borderRadius: 8
+                  borderRadius: 8,
                 }}
               >
                 <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
@@ -134,10 +148,11 @@ export default function ExpertCropReadMore({ navigation, route }) {
 
               {/* Speaker Button */}
               <TouchableOpacity
+                onPress={speakDetails}
                 style={{
                   backgroundColor: '#006644',
                   padding: 10,
-                  borderRadius: 50
+                  borderRadius: 50,
                 }}
               >
                 <Icon name="volume-high" size={20} color="#fff" />

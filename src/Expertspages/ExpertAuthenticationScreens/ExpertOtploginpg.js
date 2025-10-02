@@ -3,19 +3,19 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ImageBackground,
   ScrollView,
+  Image,
+  ImageBackground,
   ActivityIndicator,
   Alert,
-  Image,
   TextInput,
 } from "react-native";
-import { verifyExpertOtpAndSaveUser } from "../../Helper/firebaseHelper";
+import { verifyOtpForLogin } from "../../Helper/firebaseHelper";
 import NumericPad from "../../Components/Numericpad";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const ExpertSignupOtp = ({ navigation, route }) => {
-  const { phone, confirmation, expertData } = route.params;
+const ExpertLoginOtp = ({ navigation, route }) => {
+  const { confirmation, phone } = route.params;
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -26,10 +26,10 @@ const ExpertSignupOtp = ({ navigation, route }) => {
   const handleBackspace = () => setOtp((prev) => prev.slice(0, -1));
 
   const handleConfirm = async () => {
-    if (otp.length < 6) return Alert.alert("Error", "Enter full OTP");
+    if (otp.length < 6) return Alert.alert("Enter OTP");
     try {
       setLoading(true);
-      await verifyExpertOtpAndSaveUser(confirmation, otp, expertData);
+      await verifyOtpForLogin(confirmation, otp);
       navigation.replace("ExpertOtpSuccess");
     } catch (e) {
       console.error(e);
@@ -61,7 +61,7 @@ const ExpertSignupOtp = ({ navigation, route }) => {
           />
 
           {/* Title */}
-          <Text style={{ fontSize: 28, fontWeight: "bold", color: "#006644", marginBottom: 10, textAlign: "center" }}>
+          <Text style={{ fontSize: 28, fontWeight: "bold", color: "#006644", marginBottom: 10 }}>
             Enter OTP
           </Text>
           <Text style={{ fontSize: 14, color: "#006644", marginBottom: 25, textAlign: "center" }}>
@@ -117,7 +117,7 @@ const ExpertSignupOtp = ({ navigation, route }) => {
             )}
           </TouchableOpacity>
 
-          {/* Resend or Edit phone option */}
+          {/* Bottom text */}
           <Text style={{ color: "#006644", marginTop: 15, fontSize: 14, textAlign: "center" }}>
             Didn't receive OTP?{" "}
             <Text
@@ -133,4 +133,4 @@ const ExpertSignupOtp = ({ navigation, route }) => {
   );
 };
 
-export default ExpertSignupOtp;
+export default ExpertLoginOtp;

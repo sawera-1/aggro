@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,41 +9,40 @@ import {
   ImageBackground,
   ActivityIndicator,
   Alert,
-} from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { getExpertData, updateUserData } from '../Helper/firebaseHelper';
-
+} from "react-native";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import { useNavigation } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { launchImageLibrary } from "react-native-image-picker";
+import { getExpertData, updateUserData, uploadImageToCloudinary } from "../Helper/firebaseHelper";
 
 export default function ExpertMyAcc() {
   const navigation = useNavigation();
-  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [dpImage, setDpImage] = useState(null);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [qualification, setQualification] = useState('');
-  const [specialization, setSpecialization] = useState('');
-  const [experience, setExperience] = useState('');
+  const [qualification, setQualification] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [experience, setExperience] = useState("");
 
   useEffect(() => {
     const fetchExpert = async () => {
       try {
         const data = await getExpertData();
         if (data) {
-          setName(data.name || '');
-          setPhone(data.phoneNumber || '');
-          setQualification(data.qualification || '');
-          setSpecialization(data.specialization || '');
-          setExperience(data.experience || '');
+          setName(data.name || "");
+          setPhone(data.phoneNumber || "");
           setDpImage(data.dpImage || null);
+          setQualification(data.qualification || "");
+          setSpecialization(data.specialization || "");
+          setExperience(data.experience || "");
         }
       } catch (error) {
-        console.error('Error fetching expert data:', error);
-        Alert.alert('Error', 'Failed to load expert data.');
+        console.error("Error fetching expert data:", error);
+        Alert.alert("Error", "Failed to load expert data.");
       } finally {
         setLoading(false);
       }
@@ -51,44 +50,54 @@ export default function ExpertMyAcc() {
     fetchExpert();
   }, []);
 
-  // ✅ Open camera to take photo
-  const openCamera = () => {
-    launchCamera({ mediaType: 'photo', saveToPhotos: true }, (response) => {
+  const handlePickImage = () => {
+    launchImageLibrary({ mediaType: "photo", quality: 0.7 }, async (response) => {
       if (response.didCancel) return;
-      if (response.errorMessage) {
-        Alert.alert('Error', response.errorMessage);
+      if (response.errorCode) {
+        Alert.alert("Error", response.errorMessage);
         return;
       }
       const asset = response.assets?.[0];
-      if (asset?.uri) setDpImage(asset.uri);
+      if (asset?.uri) {
+        try {
+          setUploading(true);
+          const uploadedUrl = await uploadImageToCloudinary({
+            uri: asset.uri,
+            type: asset.type || "image/jpeg",
+            name: asset.fileName || "profile.jpg",
+          });
+          setDpImage(uploadedUrl);
+        } catch (err) {
+          console.error(err);
+          Alert.alert("Error", "Image upload failed!");
+        } finally {
+          setUploading(false);
+        }
+      }
     });
   };
 
   const handleSave = async () => {
-    if (!name || !phone) {
-      Alert.alert('Error', 'Name and phone number are required.');
-      return;
-    }
     try {
       await updateUserData({
         name,
         phoneNumber: phone,
+        dpImage,
         qualification,
         specialization,
         experience,
-        dpImage,
       });
-      Alert.alert('Success', 'Profile updated successfully!');
+      Alert.alert("Success", "Profile updated successfully!");
       navigation.goBack();
     } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile.');
+      console.error(error);
+      Alert.alert("Error", "Failed to update profile.");
     }
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#006644" />
       </SafeAreaView>
     );
@@ -97,104 +106,75 @@ export default function ExpertMyAcc() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
-        source={require('../images/background.jpg')}
+        source={require("../images/background.jpg")}
         style={{ flex: 1 }}
-        imageStyle={{ opacity: 0.9 }}
+        imageStyle={{ resizeMode: "cover", opacity: 0.9 }}
       >
         {/* Top Bar */}
         <View
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
+            flexDirection: "row",
+            alignItems: "center",
             paddingHorizontal: 15,
             paddingVertical: 12,
-            backgroundColor: '#006644',
+            backgroundColor: "#006644",
           }}
         >
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: 10 }}>
             <Icon name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#fff' }}>
-            {t('expertMyaccount.myAccount')}
-          </Text>
-          <View style={{ width: 26 }} />
+
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Image
+              source={dpImage ? { uri: dpImage } : require("../images/a.png")}
+              style={{ width: 50, height: 50, borderRadius: 25 }}
+            />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={{ fontSize: 16, fontWeight: "bold", color: "#fff" }}>
+                {name || "No Name"}
+              </Text>
+            </View>
+          </View>
         </View>
 
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 30 }}>
-          {/* Profile Image with Camera Icon */}
-          <View style={{ alignSelf: 'center', marginBottom: 20, position: 'relative' }}>
+          {/* Profile Image */}
+          <View style={{ alignSelf: "center", marginBottom: 20, position: "relative" }}>
             <Image
-              source={dpImage ? { uri: dpImage } : require('../images/a.png')}
-              style={{
-                width: 110,
-                height: 110,
-                borderRadius: 55,
-                borderWidth: 3,
-                borderColor: '#006644',
-              }}
+              source={dpImage ? { uri: dpImage } : require("../images/a.png")}
+              style={{ width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: "#006644" }}
             />
             <TouchableOpacity
-              onPress={openCamera}
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                backgroundColor: '#006644',
-                borderRadius: 20,
-                padding: 6,
-              }}
+              onPress={handlePickImage}
+              style={{ position: "absolute", bottom: 0, right: 0, backgroundColor: "#006644", borderRadius: 15, padding: 5 }}
             >
-              <Icon name="photo-camera" size={22} color="#fff" />
+              {uploading ? <ActivityIndicator size="small" color="#fff" /> : <Icon name="photo-camera" size={20} color="#fff" />}
             </TouchableOpacity>
           </View>
 
-          {/* Form Fields */}
-          <Text style={labelStyle}>{t('expertMyaccount.name')}</Text>
-          <TextInput
-            placeholder={t('expertMyaccount.enterName')}
-            value={name}
-            onChangeText={setName}
-            style={inputStyle}
-          />
+          {/* Name */}
+          <Text style={labelStyle}>Name</Text>
+          <TextInput value={name} onChangeText={setName} placeholder="Enter name" style={inputStyle} />
 
-          <Text style={labelStyle}>{t('expertMyaccount.phoneNumber')}</Text>
-          <TextInput
-            placeholder={t('expertMyaccount.enterPhone')}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            style={inputStyle}
-          />
+          {/* Phone */}
+          <Text style={labelStyle}>Phone Number</Text>
+          <TextInput value={phone} onChangeText={setPhone} placeholder="Enter phone" keyboardType="phone-pad" style={inputStyle} />
 
-          <Text style={labelStyle}>{t('expertMyaccount.qualification')}</Text>
-          <TextInput
-            placeholder={t('expertMyaccount.enterQualification')}
-            value={qualification}
-            onChangeText={setQualification}
-            style={inputStyle}
-          />
+          {/* Qualification */}
+          <Text style={labelStyle}>Qualification</Text>
+          <TextInput value={qualification} onChangeText={setQualification} placeholder="Enter qualification" style={inputStyle} />
 
-          <Text style={labelStyle}>{t('expertMyaccount.specialization')}</Text>
-          <TextInput
-            placeholder={t('expertMyaccount.enterSpecialization')}
-            value={specialization}
-            onChangeText={setSpecialization}
-            style={inputStyle}
-          />
+          {/* Specialization */}
+          <Text style={labelStyle}>Specialization</Text>
+          <TextInput value={specialization} onChangeText={setSpecialization} placeholder="Enter specialization" style={inputStyle} />
 
-          <Text style={labelStyle}>{t('expertMyaccount.experience')}</Text>
-          <TextInput
-            placeholder={t('expertMyaccount.enterExperience')}
-            value={experience}
-            onChangeText={setExperience}
-            keyboardType="numeric"
-            style={inputStyle}
-          />
+          {/* Experience */}
+          <Text style={labelStyle}>Experience</Text>
+          <TextInput value={experience} onChangeText={setExperience} placeholder="Enter experience" keyboardType="numeric" style={inputStyle} />
 
-          <TouchableOpacity style={saveBtnStyle} onPress={handleSave}>
-            <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-              {t('expertMyaccount.save')}
-            </Text>
+          {/* Save Button */}
+          <TouchableOpacity onPress={handleSave} style={saveBtnStyle}>
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>Save</Text>
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>
@@ -203,26 +183,27 @@ export default function ExpertMyAcc() {
 }
 
 const inputStyle = {
-  backgroundColor: '#fff',
+  backgroundColor: "#fff",
   borderRadius: 10,
   paddingHorizontal: 15,
   paddingVertical: 10,
   borderWidth: 1,
-  borderColor: '#ccc',
-  marginBottom: 15,
+  borderColor: "#ccc",
+  marginBottom: 20,
 };
 
 const labelStyle = {
   fontSize: 14,
-  fontWeight: 'bold',
-  color: '#006644',
+  fontWeight: "bold",
+  color: "#006644",
   marginBottom: 5,
 };
 
 const saveBtnStyle = {
-  backgroundColor: '#006644',
-  paddingVertical: 14,
-  borderRadius: 12,
-  alignItems: 'center',
+  backgroundColor: "#006644",
+  paddingVertical: 12,
+  borderRadius: 10,
+  marginTop: 30,
+  alignItems: "center",
   marginBottom: 30,
 };

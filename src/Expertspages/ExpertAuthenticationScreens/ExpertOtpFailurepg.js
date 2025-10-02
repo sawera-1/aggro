@@ -1,8 +1,8 @@
 import React from 'react';
-import {ScrollView, View, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
-const EOtpSuccess = ({ navigation }) => {
+const ExpertOtpFailure = ({ navigation }) => {
    const { t } = useTranslation();
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -19,21 +19,21 @@ const EOtpSuccess = ({ navigation }) => {
             style={{ width: 300, height: 100, marginBottom: 20 }}
           />
 
-          {/* Tick Icon */}
+          {/* Cross Icon */}
           <Image
-            source={require('../../images/tick.png')}
+            source={require('../../images/cross.png')}
             style={{ width: 120, height: 120, marginBottom: 20, resizeMode: 'contain' }}
           />
 
-          {/* Success Text */}
-          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#006644', marginBottom: 10 }}>
-             {t('loginotpSuccess.success')}
+          {/* Error Text */}
+          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#ff8d73', marginBottom: 10 }}>
+           {t('otploginFailure.wrong')}
           </Text>
-          <Text style={{ fontSize: 16, color: '#006644', textAlign: 'center', marginBottom: 20 }}>
-            {t('loginotpSuccess.verified')}
+          <Text style={{ fontSize: 16, color: '#ff8d73', textAlign: 'center', marginBottom: 20 }}>
+           {t('otploginFailure.verified')}
           </Text>
 
-          {/* Continue Button */}
+          {/* Retry Button */}
           <TouchableOpacity
             style={{
               backgroundColor: '#006644',
@@ -42,9 +42,9 @@ const EOtpSuccess = ({ navigation }) => {
               alignItems: 'center',
               width: '60%',
             }}
-            onPress={() => navigation.replace('ExpertWaiting')}
+            onPress={() => navigation.navigate('ExpertLogin')}
           >
-            <Text style={{ color: '#fff', fontSize: 16 }}>{t('loginotpSuccess.continue')}</Text>
+            <Text style={{ color: '#fff', fontSize: 16 }}>{t('otploginFailure.tryagain')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>
@@ -52,4 +52,4 @@ const EOtpSuccess = ({ navigation }) => {
   );
 };
 
-export default EOtpSuccess;
+export default ExpertOtpFailure;

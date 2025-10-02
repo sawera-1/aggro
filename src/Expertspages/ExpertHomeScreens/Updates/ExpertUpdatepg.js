@@ -12,19 +12,9 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getGovtSchemes, getCropInfo } from "../../../Helper/firebaseHelper"; // ✅ import helpers
+import { getGovtSchemes, getCropInfo } from "../../../Helper/firebaseHelper"; 
 
-// 🔹 Format Firestore createdAt
-const formatCreatedAt = (createdAt) => {
-  if (!createdAt) return "N/A";
-  try {
-    return createdAt.toDate().toDateString();
-  } catch {
-    return "N/A";
-  }
-};
-
-// 🔹 Reusable Card
+//  Reusable Card
 const SchemeCard = ({ item, onPress, iconSource }) => (
   <View
     style={{
@@ -45,9 +35,12 @@ const SchemeCard = ({ item, onPress, iconSource }) => (
       <Text style={{ color: "#006644", fontWeight: "bold", fontSize: 16 }}>
         {item.name || item.title || "Untitled"}
       </Text>
+
+      
       <Text style={{ color: "#888", fontSize: 12, marginVertical: 5 }}>
-        {formatCreatedAt(item.createdAt)}
+        {item.source || "Official Update"}
       </Text>
+
       <TouchableOpacity
         onPress={onPress}
         style={{
@@ -82,7 +75,6 @@ const ExpertUpdate = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("GovtSchemes");
   const { t } = useTranslation();
 
-  // State
   const [govtSchemes, setGovtSchemes] = useState([]);
   const [cropInfo, setCropInfo] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -115,7 +107,7 @@ const ExpertUpdate = ({ navigation }) => {
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-        {/* 🔹 Top Bar */}
+        {/* Top Bar */}
         <View
           style={{
             flexDirection: "row",
@@ -132,13 +124,13 @@ const ExpertUpdate = ({ navigation }) => {
             {t("updates.title")}
           </Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate("SettingStack")}
+            onPress={() => navigation.navigate("ExpertSettingsStack")}
           >
             <Icon name="settings" size={26} color="#031501ff" />
           </TouchableOpacity>
         </View>
 
-        {/* 🔹 Search Bar */}
+        {/* Search Bar */}
         <View
           style={{
             flexDirection: "row",
@@ -165,7 +157,7 @@ const ExpertUpdate = ({ navigation }) => {
           />
         </View>
 
-        {/* 🔹 Tabs */}
+        {/* Tabs */}
         <View
           style={{
             flexDirection: "row",
@@ -215,7 +207,7 @@ const ExpertUpdate = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* 🔹 Content */}
+        {/* Content */}
         <ScrollView contentContainerStyle={{ paddingHorizontal: 30, paddingBottom: 20 }}>
           {loading ? (
             <ActivityIndicator size="large" color="#006644" />

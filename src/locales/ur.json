@@ -159,10 +159,7 @@
   },
   "expertLogin": {
     "title": "ماہر لاگ ان",
-    "fullName": "پورا نام",
-    "password": "پاس ورڈ",
-    "login": "لاگ ان",
-    "forgotPassword": "پاس ورڈ بھول گئے؟",
+     "phone": "فون نمبر",
     "noAccount": "کیا آپ کا اکاؤنٹ نہیں ہے؟",
     "signup": "سائن اپ کریں"
   },

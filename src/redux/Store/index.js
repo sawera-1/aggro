@@ -2,35 +2,31 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { persistReducer, persistStore } from "redux-persist";
 import HomeDataSlice from "../Slices/HomeDataSlice.js";
-
-// Persist configuration
+// ✅ Persist config
 const persistConfig = {
   key: "root",
   storage: AsyncStorage,
+  whitelist: ["home"], // Only persist home slice
 };
 
-// Combine reducers
+// ✅ Combine reducers
 const rootReducer = combineReducers({
   home: HomeDataSlice,
-
 });
 
-// Wrap the rootReducer with persistReducer
+// ✅ Persisted reducer
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-// Create store
+// ✅ Create store
 const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false, // Disable checks for serializable actions due to persist
+      serializableCheck: false, // Needed for redux-persist
     }),
 });
 
-// Create persistor
+// ✅ Create persistor
 const persistor = persistStore(store);
 
-export { persistor, store };
-
-
-
+export { store, persistor };

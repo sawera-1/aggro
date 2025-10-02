@@ -11,9 +11,10 @@ import {
 } from "react-native";
 import CountryPicker from "react-native-country-picker-modal";
 import NumericPad from "../../Components/Numericpad";
-import { checkIfUserExists, sendOtp } from "../../Helper/firebaseHelper";
+import { sendOtp } from "../../Helper/firebaseHelper";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 const FarmerLogin = ({ navigation }) => {
   const { t } = useTranslation();
   const [phone, setPhone] = useState("");
@@ -22,15 +23,11 @@ const FarmerLogin = ({ navigation }) => {
   const [showPad, setShowPad] = useState(false);
 
   const handlePress = (num) => {
-    if (phone.length < 11) {
-      setPhone((prev) => prev + num);
-    }
+    if (phone.length < 11) setPhone((prev) => prev + num);
   };
 
   const handleBackspace = () => {
-    if (phone.length > 0) {
-      setPhone((prev) => prev.slice(0, -1));
-    }
+    if (phone.length > 0) setPhone((prev) => prev.slice(0, -1));
   };
 
   const handleLogin = async () => {
@@ -42,22 +39,11 @@ const FarmerLogin = ({ navigation }) => {
     const fullPhone = `+${callingCode}${phone.replace(/^0+/, "")}`;
 
     try {
-      const exists = await checkIfUserExists(fullPhone);
-
-      if (!exists) {
-        Alert.alert(
-          "Error",
-          "No account found with this phone number. Please sign up first."
-        );
-        return;
-      }
-
+      // ✅ Send OTP
       const confirmation = await sendOtp(fullPhone);
 
-      navigation.navigate("FarmerOtp", {
-        confirmation,
-        phone: fullPhone,
-      });
+      // ✅ Navigate to OTP screen
+      navigation.navigate("FarmerOtp", { confirmation, phone });
     } catch (e) {
       console.error("Login error:", e);
       Alert.alert("Error", e.message);
@@ -80,28 +66,18 @@ const FarmerLogin = ({ navigation }) => {
             gap: 15,
           }}
         >
-          {/* Logo */}
           <Image
             source={require("../../images/logodark.png")}
             style={{ width: 300, height: 100, marginBottom: 20 }}
           />
 
-          {/* Title */}
-          <Text
-            style={{
-              fontSize: 28,
-              fontWeight: "bold",
-              color: "#006644",
-              marginBottom: 10,
-            }}
-          >
+          <Text style={{ fontSize: 28, fontWeight: "bold", color: "#006644", marginBottom: 10 }}>
             {t("farmerLogin.title")}
           </Text>
           <Text style={{ fontSize: 18, color: "#006644", marginBottom: 30 }}>
             {t("farmerLogin.subtitle")}
           </Text>
 
-          {/* Phone Input */}
           <TouchableOpacity
             activeOpacity={1}
             onPress={() => setShowPad(true)}
@@ -130,9 +106,7 @@ const FarmerLogin = ({ navigation }) => {
                 setCallingCode(country.callingCode[0]);
               }}
             />
-            <Text
-              style={{ color: "#006644", fontSize: 20, marginHorizontal: 8 }}
-            >
+            <Text style={{ color: "#006644", fontSize: 20, marginHorizontal: 8 }}>
               +{callingCode}
             </Text>
             <TextInput
@@ -144,7 +118,6 @@ const FarmerLogin = ({ navigation }) => {
             />
           </TouchableOpacity>
 
-          {/* Numeric Pad */}
           {showPad && (
             <NumericPad
               onPressNumber={handlePress}
@@ -153,7 +126,6 @@ const FarmerLogin = ({ navigation }) => {
             />
           )}
 
-          {/* Continue Button */}
           <TouchableOpacity
             onPress={handleLogin}
             style={{
@@ -164,19 +136,11 @@ const FarmerLogin = ({ navigation }) => {
               marginBottom: 20,
             }}
           >
-            <Text
-              style={{
-                paddingVertical: 12,
-                color: "#fff",
-                fontSize: 20,
-                fontWeight: "bold",
-              }}
-            >
+            <Text style={{ paddingVertical: 12, color: "#fff", fontSize: 20, fontWeight: "bold" }}>
               {t("farmerLogin.continue")}
             </Text>
           </TouchableOpacity>
 
-          {/* Footer */}
           <Text style={{ color: "#006644", fontSize: 20 }}>
             {t("farmerLogin.noAccount")}{" "}
             <Text

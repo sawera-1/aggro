@@ -2,7 +2,7 @@ import React from 'react';
 import {  ScrollView, View, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
-const ExpertWrongOtp = ({ navigation }) => {
+const ExpertOtpSuccess = ({ navigation }) => {
   const { t } = useTranslation();
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -19,21 +19,21 @@ const ExpertWrongOtp = ({ navigation }) => {
             style={{ width: 300, height: 100, marginBottom: 20 }}
           />
 
-          {/* Cross Icon */}
+          {/* Tick Icon */}
           <Image
-            source={require('../../images/cross.png')}
+            source={require('../../images/tick.png')}
             style={{ width: 120, height: 120, marginBottom: 20, resizeMode: 'contain' }}
           />
 
-          {/* Error Text */}
-          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#ff8d73', marginBottom: 10 }}>
-             {t('loginotpFailure.wrong')}
+          {/* Success Text */}
+          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#006644', marginBottom: 10 }}>
+            {t('expertloginSuccess.success')}
           </Text>
-          <Text style={{ fontSize: 16, color: '#ff8d73', textAlign: 'center', marginBottom: 20 }}>
-            {t('loginotpFailure.notVerfied')}
+          <Text style={{ fontSize: 16, color: '#006644', textAlign: 'center', marginBottom: 20 }}>
+           {t('expertloginSuccess.verified')}
           </Text>
 
-          {/* Retry Button */}
+          {/* Continue Button */}
           <TouchableOpacity
             style={{
               backgroundColor: '#006644',
@@ -42,9 +42,9 @@ const ExpertWrongOtp = ({ navigation }) => {
               alignItems: 'center',
               width: '60%',
             }}
-            onPress={() => navigation.navigate('ExpertLogin')}
+            onPress={() => navigation.replace('ExpertBottomTabs')}
           >
-            <Text style={{ color: '#fff', fontSize: 16 }}> {t('loginotpFailure.tryAgain')}</Text>
+            <Text style={{ color: '#fff', fontSize: 16 }}> {t('expertloginSuccess.continue')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>
@@ -52,4 +52,4 @@ const ExpertWrongOtp = ({ navigation }) => {
   );
 };
 
-export default ExpertWrongOtp;
+export default  ExpertOtpSuccess ;

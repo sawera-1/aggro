@@ -13,7 +13,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getExpertData } from '../Helper/firebaseHelper'; // ✅ fetch expert data from firebase
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 
 export default function ExpertSetting({ navigation }) {
   const { t } = useTranslation();
@@ -21,16 +22,26 @@ export default function ExpertSetting({ navigation }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch expert data from Firebase
- useEffect(() => {
-  const fetchUser = async () => {
-    const data = await getExpertData();  // ✅ farmer ki jagah expert
-    setUser(data);
-    setLoading(false);
-  };
-  fetchUser();
-}, []);
+  useEffect(() => {
+    const uid = auth().currentUser.uid;
 
+    // Real-time listener for expert data
+    const unsubscribe = firestore()
+      .collection('users') // or 'experts' collection
+      .doc(uid)
+      .onSnapshot(
+        doc => {
+          setUser(doc.data());
+          setLoading(false);
+        },
+        err => {
+          console.error(err);
+          setLoading(false);
+        }
+      );
+
+    return () => unsubscribe(); // cleanup listener on unmount
+  }, []);
 
   if (loading) {
     return (
@@ -74,11 +85,7 @@ export default function ExpertSetting({ navigation }) {
           </View>
 
           {/* Menu Items */}
-          {/** My Account **/}
-          <TouchableOpacity
-            style={menuStyle}
-            onPress={() => navigation.navigate('ExpertMyAcc')}
-          >
+          <TouchableOpacity style={menuStyle} onPress={() => navigation.navigate('ExpertMyAcc')}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="person" size={22} color="#006644" style={{ marginRight: 15 }} />
               <Text style={{ fontSize: 16, color: '#000' }}>{t('exsettings.myAccount')}</Text>
@@ -86,11 +93,7 @@ export default function ExpertSetting({ navigation }) {
             <Icon name="chevron-right" size={24} color="#999" />
           </TouchableOpacity>
 
-          {/** Privacy Policy **/}
-          <TouchableOpacity
-            style={menuStyle}
-            onPress={() => navigation.navigate('FPrivacyPolicy')}
-          >
+          <TouchableOpacity style={menuStyle} onPress={() => navigation.navigate('FPrivacyPolicy')}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="privacy-tip" size={22} color="#006644" style={{ marginRight: 15 }} />
               <Text style={{ fontSize: 16, color: '#000' }}>{t('exsettings.privacyPolicy')}</Text>
@@ -98,11 +101,7 @@ export default function ExpertSetting({ navigation }) {
             <Icon name="chevron-right" size={24} color="#999" />
           </TouchableOpacity>
 
-          {/** Language **/}
-          <TouchableOpacity
-            style={menuStyle}
-            onPress={() => navigation.navigate('FLanguage')}
-          >
+          <TouchableOpacity style={menuStyle} onPress={() => navigation.navigate('FLanguage')}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="language" size={22} color="#006644" style={{ marginRight: 15 }} />
               <Text style={{ fontSize: 16, color: '#000' }}>{t('exsettings.language')}</Text>
@@ -110,11 +109,7 @@ export default function ExpertSetting({ navigation }) {
             <Icon name="chevron-right" size={24} color="#999" />
           </TouchableOpacity>
 
-          {/** Feedback **/}
-          <TouchableOpacity
-            style={menuStyle}
-            onPress={() => navigation.navigate('ExpertFeedback')}
-          >
+          <TouchableOpacity style={menuStyle} onPress={() => navigation.navigate('ExpertFeedback')}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="feedback" size={22} color="#006644" style={{ marginRight: 15 }} />
               <Text style={{ fontSize: 16, color: '#000' }}>{t('exsettings.feedback')}</Text>
@@ -122,11 +117,7 @@ export default function ExpertSetting({ navigation }) {
             <Icon name="chevron-right" size={24} color="#999" />
           </TouchableOpacity>
 
-          {/** Logout **/}
-          <TouchableOpacity
-            style={menuStyle}
-            onPress={() => setLogoutVisible(true)}
-          >
+          <TouchableOpacity style={menuStyle} onPress={() => setLogoutVisible(true)}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="logout" size={22} color="red" style={{ marginRight: 15 }} />
               <Text style={{ fontSize: 16, color: 'red' }}>{t('exsettings.logout')}</Text>
@@ -143,7 +134,6 @@ export default function ExpertSetting({ navigation }) {
                 <Text style={{ fontSize: 15, color: '#555', marginBottom: 20, textAlign: 'center' }}>
                   {t('exsettings.logoutModalMessage')}
                 </Text>
-
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
                   <TouchableOpacity
                     style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 18, borderRadius: 10, flex: 1, justifyContent: 'center', backgroundColor: '#006644', marginRight: 8 }}
@@ -155,10 +145,20 @@ export default function ExpertSetting({ navigation }) {
 
                   <TouchableOpacity
                     style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 18, borderRadius: 10, flex: 1, justifyContent: 'center', backgroundColor: '#cc0000', marginLeft: 8 }}
-                    onPress={() => {
-                      setLogoutVisible(false);
-                      // TODO: add your logout logic
-                    }}
+                   onPress={async () => {
+  try {
+    setLogoutVisible(false);
+    await auth().signOut();
+    // Navigate to SignUp screen (or Intro/Welcome)
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'ExpertSignup' }], // replace with your actual sign-up screen name
+    });
+  } catch (err) {
+    console.error("Logout error:", err);
+  }
+}}
+
                   >
                     <Ionicons name="log-out" size={20} color="#fff" style={{ marginRight: 6 }} />
                     <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{t('exsettings.logout')}</Text>

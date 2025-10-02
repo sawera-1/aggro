@@ -153,10 +153,8 @@
   },
   "expertLogin": {
     "title": "Expert Login",
-    "fullName": "Full Name",
-    "password": "Password",
+    "phone": "Phone number",
     "login": "Login",
-    "forgotPassword": "Forgot Password?",
     "noAccount": "Dont have an account?",
     "signup": "Sign Up"
   },
