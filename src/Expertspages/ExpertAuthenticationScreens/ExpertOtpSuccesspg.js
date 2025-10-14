@@ -26,11 +26,9 @@ const ExpertOtpSuccess = ({ navigation }) => {
           />
 
           {/* Success Text */}
-          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#006644', marginBottom: 10 }}>
-            {t('expertloginSuccess.success')}
-          </Text>
+          
           <Text style={{ fontSize: 16, color: '#006644', textAlign: 'center', marginBottom: 20 }}>
-           {t('expertloginSuccess.verified')}
+           Your OTP has been verified successfully.
           </Text>
 
           {/* Continue Button */}

@@ -1,130 +1,504 @@
-// ChatScreen.js
-import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, TextInput, Button, FlatList, StyleSheet } from "react-native";
-import firestore from "@react-native-firebase/firestore";
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  SafeAreaView,
+  Alert,
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Platform,
+  PermissionsAndroid,
+  Linking,
+  Modal,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
+import { GiftedChat, Bubble, Send } from 'react-native-gifted-chat';
+import firestore from '@react-native-firebase/firestore';
+import Icon from 'react-native-vector-icons/Ionicons';
+import Contacts from 'react-native-contacts';
+import { launchImageLibrary } from 'react-native-image-picker';
+import Geolocation from 'react-native-geolocation-service';
 
-const ChatScreen = ({ current_user, second_user }) => {
+export default function ChatScreen({ route, navigation }) {
+  const { current_user, second_user, secondUserName, secondUserPic } = route.params;
+
   const [messages, setMessages] = useState([]);
-  const [text, setText] = useState("");
+  const [secondUserPhone, setSecondUserPhone] = useState('Loading...');
+  const [dpImage, setDpImage] = useState(secondUserPic);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [fullImageUri, setFullImageUri] = useState(null);
 
-  // ✅ Create unique chatId (always same for both users)
-  const chatId =
-    current_user < second_user
-      ? `${current_user}_${second_user}`
-      : `${second_user}_${current_user}`;
+  const CLOUDINARY_CLOUD_NAME = 'dumgs9cp4';
+  const CLOUDINARY_UPLOAD_PRESET = 'react_native_uploads';
 
-  // ✅ Listen for real-time messages
+  const chatId = current_user < second_user
+    ? `${current_user}_${second_user}`
+    : `${second_user}_${current_user}`;
+
+  // Fetch receiver details
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const doc = await firestore().collection('users').doc(second_user).get();
+        if (doc.exists) {
+          const data = doc.data();
+          setSecondUserPhone(data.phone || data.phoneNumber || data.phonenumber || 'N/A');
+          setDpImage(data.dpImage || secondUserPic);
+        } else setSecondUserPhone('N/A');
+      } catch {
+        setSecondUserPhone('N/A');
+      }
+    };
+    fetchUserDetails();
+  }, [second_user, secondUserPic]);
+
+  // Realtime messages listener
   useEffect(() => {
     const unsubscribe = firestore()
-      .collection("chats")
+      .collection('chats')
       .doc(chatId)
-      .collection("messages")
-      .orderBy("createdAt", "desc")
-      .onSnapshot((querySnapshot) => {
-        const msgs = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-        }));
-        setMessages(msgs);
+      .collection('messages')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(snapshot => {
+        const allMessages = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            _id: doc.id,
+            text: data.text || '',
+            image: data.image || data.imageUrl,
+            createdAt: data.createdAt?.toDate() || new Date(),
+            user: {
+              _id: data.senderId,
+              name: data.senderId === current_user ? 'You' : secondUserName || 'Unknown',
+              avatar: dpImage || undefined,
+            },
+            readBy: data.readBy || {},
+            isRead: !!(data.readBy && data.readBy[second_user]),
+            isDelivered: !!(data.readBy && data.readBy[current_user]),
+            type: data.type || 'text',
+            documentUrl: data.documentUrl,
+            fileName: data.fileName,
+            contactName: data.contactName,
+            contactPhone: data.contactPhone,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            locationUrl: data.locationUrl,
+            audioUrl: data.audioUrl,
+            durationMs: data.durationMs,
+          };
+        });
+        setMessages(allMessages);
+      }, () => {
+        Alert.alert('Error', 'Failed to load messages.');
       });
 
     return () => unsubscribe();
-  }, [chatId]);
+  }, [chatId, current_user, secondUserName, dpImage, second_user]);
 
-  // ✅ Send message
-  const sendMessage = useCallback(async () => {
-    if (!text.trim()) return;
+  // Mark messages as read whenever messages change and chat is focused
+  useEffect(() => {
+    const markAsRead = async () => {
+      if (!navigation.isFocused()) return;
+      const unread = messages.filter(msg =>
+        msg.user._id !== current_user && !msg.readBy?.[current_user]
+      );
+      if (!unread.length) return;
 
-    await firestore()
-      .collection("chats")
-      .doc(chatId)
-      .collection("messages")
-      .add({
-        text,
+      const batch = firestore().batch();
+      unread.forEach(msg => {
+        const msgRef = firestore().collection('chats').doc(chatId).collection('messages').doc(msg._id);
+        batch.update(msgRef, { [`readBy.${current_user}`]: firestore.FieldValue.serverTimestamp() });
+      });
+
+      try {
+        await batch.commit();
+      } catch {}
+    };
+    markAsRead();
+  }, [messages, current_user, chatId, navigation]);
+
+  // Send text message
+  const onSend = useCallback(async (msgs = []) => {
+    if (!msgs?.length || !msgs[0].text?.trim()) return;
+
+    const msg = msgs[0];
+    const newMessage = {
+      _id: `${Date.now()}_${current_user}`,
+      text: msg.text.trim(),
+      senderId: current_user,
+      receiverId: second_user,
+      createdAt: new Date(),
+      user: { _id: current_user, name: 'You', avatar: dpImage },
+    };
+
+    setMessages(prev => GiftedChat.append(prev, [newMessage]));
+
+    try {
+      const chatRef = firestore().collection('chats').doc(chatId);
+      const chatDoc = await chatRef.get();
+
+      if (!chatDoc.exists) {
+        await chatRef.set({
+          participants: [current_user, second_user],
+          createdAt: firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      await chatRef.collection('messages').add({
+        text: newMessage.text,
         senderId: current_user,
         receiverId: second_user,
         createdAt: firestore.FieldValue.serverTimestamp(),
+        readBy: { [current_user]: firestore.FieldValue.serverTimestamp() },
       });
+    } catch {
+      Alert.alert('Error', 'Failed to send message.');
+    }
+  }, [current_user, second_user, chatId, dpImage]);
 
-    setText("");
-  }, [text, chatId, current_user, second_user]);
+  // Cloudinary upload
+  const uploadToCloudinary = async (uri, filename, mimeType, resourceType = 'auto') => {
+    const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
+    const data = new FormData();
+    data.append('file', { uri, name: filename || `upload_${Date.now()}`, type: mimeType || 'application/octet-stream' });
+    data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
-  // ✅ Render each message bubble
-  const renderItem = ({ item }) => (
-    <View
-      style={[
-        styles.messageContainer,
-        item.senderId === current_user ? styles.myMessage : styles.theirMessage,
-      ]}
-    >
-      <Text style={styles.messageText}>{item.text}</Text>
-      <Text style={styles.timeText}>
-        {item.createdAt?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-      </Text>
-    </View>
+    const res = await fetch(endpoint, { method: 'POST', body: data });
+    const json = await res.json();
+    if (!res.ok || !json.secure_url) throw new Error(json.error?.message || `Cloudinary upload failed (${res.status})`);
+    return json.secure_url;
+  };
+
+  // Modal: Pick multiple images, then send on send btn
+  const pickImages = async () => {
+    try {
+      setImageLoading(true);
+      const resp = await launchImageLibrary({ mediaType: 'photo', quality: 0.8, selectionLimit: 10 });
+      if (resp.didCancel) return;
+      if (resp?.assets && resp.assets.length > 0) {
+        setSelectedImages(resp.assets.map(a => ({ uri: a.uri, fileName: a.fileName, type: a.type })));
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to pick images.');
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  const sendSelectedImages = async () => {
+    if (!selectedImages.length) return;
+    setIsUploadingImage(true);
+
+    try {
+      for (const asset of selectedImages) {
+        const url = await uploadToCloudinary(asset.uri, asset.fileName || `image_${Date.now()}.jpg`, asset.type || 'image/jpeg');
+        const messageId = `${Date.now()}_${current_user}`;
+        const optimistic = {
+          _id: messageId,
+          image: url,
+          text: '',
+          createdAt: new Date(),
+          user: { _id: current_user, name: 'You', avatar: dpImage },
+          type: 'image',
+        };
+        setMessages(prev => GiftedChat.append(prev, [optimistic]));
+
+        await firestore().collection('chats').doc(chatId).collection('messages').doc(messageId).set({
+          type: 'image',
+          imageUrl: url,
+          image: url,
+          senderId: current_user,
+          receiverId: second_user,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          readBy: { [current_user]: firestore.FieldValue.serverTimestamp() },
+        });
+      }
+      setModalVisible(false);
+      setSelectedImages([]);
+    } catch {
+      Alert.alert('Error', 'Failed to send images.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  // Document picker logic (mocked)
+  const handlePickDocument = async () => {
+    Alert.alert("Document", "Document picker not implemented in this snippet (see react-native-document-picker).");
+  };
+
+  // Contact logic
+  const handleShareContact = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_CONTACTS);
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) return Alert.alert('Permission', 'Contacts permission is required.');
+      }
+      const list = await Contacts.getAll();
+      if (!list.length) return Alert.alert('Contacts', 'No contacts found.');
+
+      const c = list[0];
+      const phone = c.phoneNumbers?.[0]?.number || '';
+      await firestore().collection('chats').doc(chatId).collection('messages').add({
+        type: 'contact',
+        contactName: c.displayName || `${c.givenName || ''} ${c.familyName || ''}`.trim(),
+        contactPhone: phone,
+        senderId: current_user,
+        receiverId: second_user,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        readBy: { [current_user]: firestore.FieldValue.serverTimestamp() },
+      });
+      setModalVisible(false);
+    } catch {
+      Alert.alert('Error', 'Failed to share contact.');
+    }
+  };
+
+  // Location logic
+  const handleShareLocation = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) return Alert.alert('Permission', 'Location permission is required.');
+      }
+
+      Geolocation.getCurrentPosition(
+        async position => {
+          const { latitude, longitude } = position.coords;
+          const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          await firestore().collection('chats').doc(chatId).collection('messages').add({
+            type: 'location',
+            latitude,
+            longitude,
+            locationUrl: mapUrl,
+            senderId: current_user,
+            receiverId: second_user,
+            createdAt: firestore.FieldValue.serverTimestamp(),
+            readBy: { [current_user]: firestore.FieldValue.serverTimestamp() },
+          });
+          setModalVisible(false);
+        },
+        () => {
+          Alert.alert('Error', 'Failed to get location.');
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      );
+    } catch {
+      Alert.alert('Error', 'Failed to share location.');
+    }
+  };
+
+  // Full-screen image modal
+  const FullImageModal = () => (
+    <Modal visible={!!fullImageUri} animationType="fade" transparent={false}>
+      <View style={{ flex: 1, backgroundColor: "#000" }}>
+        <TouchableOpacity
+          onPress={() => setFullImageUri(null)}
+          style={{
+            position: 'absolute',
+            top: 40,
+            left: 20,
+            zIndex: 10,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            borderRadius: 20,
+            padding: 6,
+          }}
+        >
+          <Icon name="arrow-back" size={30} color="#fff" />
+        </TouchableOpacity>
+        <Image
+          source={{ uri: fullImageUri }}
+          resizeMode="contain"
+          style={{ flex: 1, width: "100%", height: "100%" }}
+        />
+      </View>
+    </Modal>
+  );
+
+  // Modal for plus icon
+  const PlusModal = () => (
+    <Modal visible={modalVisible} animationType="slide" transparent>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.plusModalContainer}>
+          <Text style={styles.modalTitle}>Choose Action</Text>
+          <View style={styles.plusModalOptions}>
+            <TouchableOpacity style={styles.plusOptionBtn} onPress={pickImages}>
+              <Icon name="image-outline" size={28} color="#075E54" />
+              <Text style={styles.plusOptionText}>Image</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.plusOptionBtn} onPress={handleShareContact}>
+              <Icon name="person-add-outline" size={28} color="#075E54" />
+              <Text style={styles.plusOptionText}>Contact</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.plusOptionBtn} onPress={handlePickDocument}>
+              <Icon name="document-outline" size={28} color="#075E54" />
+              <Text style={styles.plusOptionText}>Document</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.plusOptionBtn} onPress={handleShareLocation}>
+              <Icon name="location-outline" size={28} color="#075E54" />
+              <Text style={styles.plusOptionText}>Location</Text>
+            </TouchableOpacity>
+          </View>
+          {selectedImages.length > 0 && (
+            <>
+              <FlatList
+                data={selectedImages}
+                keyExtractor={(_, idx) => idx.toString()}
+                horizontal
+                style={{ marginVertical: 10 }}
+                renderItem={({ item }) => (
+                  <Image
+                    source={{ uri: item.uri }}
+                    style={{ width: 70, height: 70, marginRight: 8, borderRadius: 8, borderWidth: 2, borderColor: '#075E54' }}
+                  />
+                )}
+              />
+              <TouchableOpacity
+                style={styles.modalSendBtn}
+                disabled={isUploadingImage}
+                onPress={sendSelectedImages}>
+                <Text style={{ color: "#fff", fontWeight: "700" }}>{isUploadingImage ? "Sending..." : "Send"}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          <TouchableOpacity
+            style={styles.modalCancelBtn}
+            onPress={() => {
+              setModalVisible(false);
+              setSelectedImages([]);
+            }}>
+            <Text style={{ color: "#075E54", fontWeight: '600' }}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
   );
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        inverted
-      />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#ECE5DD' }}>
+      <FullImageModal />
+      <PlusModal />
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Type a message..."
-          style={styles.input}
-        />
-        <Button title="Send" onPress={sendMessage} />
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon name="arrow-back" size={26} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.userInfo}
+          onPress={() =>
+            navigation.navigate('ChatDes', {
+              userId: second_user,
+              userName: secondUserName,
+              userPic: dpImage,
+              userPhone: secondUserPhone,
+            })
+          }
+        >
+          <Image
+            source={{ uri: dpImage || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }}
+            style={styles.avatar}
+          />
+          <View>
+            <Text style={styles.userName}>{secondUserName || 'User'}</Text>
+            <Text style={styles.userPhone}>{secondUserPhone || 'N/A'}</Text>
+          </View>
+        </TouchableOpacity>
       </View>
-    </View>
-  );
-};
 
-export default ChatScreen;
+      {/* Chat Interface */}
+      <GiftedChat
+        key={chatId}
+        messages={messages}
+        onSend={onSend}
+        user={{ _id: current_user }}
+        showAvatarForEveryMessage
+        alwaysShowSend
+        scrollToBottom
+        renderActions={() => (
+          <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.plusIconBtn}>
+            <Icon name="add-circle" size={36} color="#075E54" />
+          </TouchableOpacity>
+        )}
+        renderSend={(props) => (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity
+              onLongPress={() => Alert.alert('Unavailable', 'Voice recording is temporarily disabled.')}
+              style={{ paddingHorizontal: 8 }}
+            >
+              <Icon name={isRecording ? 'mic' : 'mic-outline'} size={24} color={isRecording ? '#d00' : '#075E54'} />
+            </TouchableOpacity>
+            <Send {...props}>
+              <View style={{ marginRight: 8, marginBottom: 5 }}>
+                <Icon name="send" size={22} color="#075E54" />
+              </View>
+            </Send>
+          </View>
+        )}
+        renderBubble={(props) => {
+          const { currentMessage } = props;
+          const isCurrentUser = currentMessage.user._id === current_user;
+          return (
+            <View style={[styles.bubbleWrapper, { alignSelf: isCurrentUser ? 'flex-end' : 'flex-start' }]}>
+              {currentMessage.text && <Bubble {...props} wrapperStyle={{ right: styles.rightBubble, left: styles.leftBubble }} textStyle={{ right: styles.rightText, left: styles.leftText }} renderTime={() => null} />}
+              {(currentMessage.image || currentMessage.imageUrl) && (
+                <TouchableOpacity
+                  activeOpacity={0.95}
+                  onPress={() => setFullImageUri(currentMessage.image || currentMessage.imageUrl)}
+                >
+                  <Image
+                    source={{ uri: currentMessage.image || currentMessage.imageUrl }}
+                    style={{
+                      width: 220,
+                      height: 220,
+                      borderRadius: 8,
+                      marginTop: 4,
+                      alignSelf: isCurrentUser ? 'flex-end' : 'flex-start',
+                    }}
+                  />
+                </TouchableOpacity>
+              )}
+              <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
+                <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                {isCurrentUser && <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>{currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}</Text>}
+              </View>
+            </View>
+          );
+        }}
+      />
+    </SafeAreaView>
+  );
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
-  inputContainer: {
-    flexDirection: "row",
-    padding: 10,
-    borderTopWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginRight: 10,
-  },
-  messageContainer: {
-    marginVertical: 5,
-    padding: 10,
-    borderRadius: 10,
-    maxWidth: "70%",
-  },
-  myMessage: {
-    backgroundColor: "#DCF8C6",
-    alignSelf: "flex-end",
-  },
-  theirMessage: {
-    backgroundColor: "#fff",
-    alignSelf: "flex-start",
-  },
-  messageText: { fontSize: 16 },
-  timeText: {
-    fontSize: 10,
-    color: "#555",
-    marginTop: 2,
-    alignSelf: "flex-end",
-  },
+  topBar: { flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: '#075E54', elevation: 4 },
+  userInfo: { flexDirection: 'row', alignItems: 'center', marginLeft: 12 },
+  avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
+  userName: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  userPhone: { fontSize: 13, color: '#e6e6e6' },
+  bubbleWrapper: { position: 'relative', marginBottom: 2 },
+  rightBubble: { backgroundColor: '#DCF8C6', borderRadius: 12, borderTopRightRadius: 2, marginRight: 8, marginBottom: 6, paddingRight: 45, paddingVertical: 6, paddingLeft: 10, maxWidth: '80%' },
+  leftBubble: { backgroundColor: '#FFFFFF', borderRadius: 12, borderTopLeftRadius: 2, marginLeft: 8, marginBottom: 6, paddingRight: 45, paddingVertical: 6, paddingLeft: 10, maxWidth: '80%' },
+  rightText: { color: '#000', fontSize: 15 },
+  leftText: { color: '#000', fontSize: 15 },
+  timeTickContainer: { position: 'absolute', bottom: 4, right: 12, flexDirection: 'row', alignItems: 'center' },
+  timeText: { fontSize: 10, color: '#667781', opacity: 0.9, marginRight: 2 },
+  tickText: { fontSize: 11 },
+  sentContainer: { right: 12 },
+  receivedContainer: { right: 12 },
+  plusIconBtn: { paddingHorizontal: 6, paddingVertical: 2 },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
+  plusModalContainer: { width: '90%', backgroundColor: '#fff', borderRadius: 16, padding: 20, alignItems: 'center', elevation: 6 },
+  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 18, color: '#222' },
+  plusModalOptions: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 12 },
+  plusOptionBtn: { flex: 1, alignItems: 'center', marginHorizontal: 10, paddingVertical: 8 },
+  plusOptionText: { fontSize: 13, color: '#075E54', marginTop: 5, fontWeight: '600' },
+  modalCancelBtn: { marginTop: 18, paddingVertical: 8, paddingHorizontal: 22, borderRadius: 8, backgroundColor: '#e6f3ef' },
+  modalSendBtn: { marginTop: 5, paddingVertical: 8, paddingHorizontal: 22, borderRadius: 8, backgroundColor: '#075E54', alignSelf: 'flex-end' },
 });

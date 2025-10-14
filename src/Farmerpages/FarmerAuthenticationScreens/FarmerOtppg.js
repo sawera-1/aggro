@@ -1,62 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
-  ScrollView,
-  Image,
   ImageBackground,
+  ScrollView,
   ActivityIndicator,
   Alert,
-} from 'react-native';
-import NumericPad from '../../Components/Numericpad';
-import { useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
-import { setUser } from '../../redux/Slices/HomeDataSlice';
+  Image,
+  TextInput,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import NumericPad from "../../Components/Numericpad";
 import { verifyOtpForLogin } from "../../Helper/firebaseHelper";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../redux/Slices/HomeDataSlice";
+import { useTranslation } from "react-i18next";
 
 const FarmerOtp = ({ navigation, route }) => {
   const { confirmation, phone } = route.params;
-  const { t } = useTranslation();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handlePress = (num) => {
-    if (currentIndex < 6) {
-      const newOtp = [...otp];
-      newOtp[currentIndex] = num;
-      setOtp(newOtp);
-      setCurrentIndex(currentIndex + 1);
-
-      if (currentIndex + 1 === 6) handleConfirm(newOtp.join(''));
-    }
+    if (otp.length < 6) setOtp((prev) => prev + num);
   };
 
-  const handleBackspace = () => {
-    if (currentIndex > 0) {
-      const newOtp = [...otp];
-      newOtp[currentIndex - 1] = '';
-      setOtp(newOtp);
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
+  const handleBackspace = () => setOtp((prev) => prev.slice(0, -1));
 
-  const handleConfirm = async (codeFromAuto = null) => {
-    const code = codeFromAuto || otp.join('');
-    if (code.length < 6) {
-      Alert.alert('Error', 'Enter full OTP');
+  const handleConfirm = async () => {
+    if (otp.length < 6) {
+      Alert.alert("Error", "Enter full OTP");
       return;
     }
-
     try {
       setLoading(true);
-      // ✅ Verify OTP and get user
-      const user = await verifyOtpForLogin(confirmation, code);
+      const user = await verifyOtpForLogin(confirmation, otp);
+
       if (!user) {
         Alert.alert("No account found", "Please sign up first.");
         navigation.replace("FarmerSignup");
@@ -65,8 +48,8 @@ const FarmerOtp = ({ navigation, route }) => {
 
       dispatch(setUser(user));
       navigation.replace("OtpSuccess");
-    } catch (error) {
-      console.error("OTP verification failed:", error.message);
+    } catch (e) {
+      console.error(e);
       Alert.alert("Invalid OTP", "Please try again.");
     } finally {
       setLoading(false);
@@ -75,41 +58,122 @@ const FarmerOtp = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ImageBackground source={require('../../images/background.jpg')} style={{ flex: 1 }} resizeMode="cover">
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          <Image source={require('../../images/logodark.png')} style={{ width: 200, height: 100, marginBottom: 20 }} />
-          <Text style={{ fontSize: 20, fontWeight: '600', color: '#000', textAlign: 'center', marginBottom: 8 }}>
-            {t('farmerOtp.title')}
-          </Text>
-          <Text style={{ color: '#555', textAlign: 'center', marginBottom: 30 }}>
-            {t('farmerOtp.subtitle')}
+      <ImageBackground
+        source={require("../../images/background.jpg")}
+        style={{ flex: 1 }}
+        resizeMode="cover"
+      >
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          {/* Logo */}
+          <Image
+            source={require("../../images/logodark.png")}
+            style={{ width: 280, height: 90, marginBottom: 25 }}
+          />
+
+          {/* Title */}
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: "bold",
+              color: "#006644",
+              marginBottom: 10,
+              textAlign: "center",
+            }}
+          >
+            {t("farmerOtp.enterOtp") || "Enter OTP"}
           </Text>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 30 }}>
-            {otp.map((val, index) => (
-              <TextInput key={index} value={val} editable={false} style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 8,
-                width: 50,
-                height: 50,
-                textAlign: 'center',
-                fontSize: 18,
-                backgroundColor: '#fff',
-                marginHorizontal: 3,
-              }} />
+          <Text
+            style={{
+              fontSize: 14,
+              color: "#006644",
+              marginBottom: 25,
+              textAlign: "center",
+            }}
+          >
+            {t("farmerOtp.sentTo") || "We have sent an OTP to"} {phone}
+          </Text>
+
+          {/* OTP Line Inputs */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: "80%",
+              marginBottom: 30,
+            }}
+          >
+            {[...Array(6)].map((_, i) => (
+              <TextInput
+                key={i}
+                value={otp[i] || ""}
+                style={{
+                  borderBottomWidth: 2,
+                  borderColor: "#006644",
+                  width: 40,
+                  textAlign: "center",
+                  fontSize: 20,
+                  color: "#006644",
+                  fontWeight: "bold",
+                }}
+                editable={false}
+              />
             ))}
           </View>
 
-          <NumericPad onPressNumber={handlePress} onBackspace={handleBackspace} onSubmit={handleConfirm} />
+          {/* Numeric pad */}
+          <NumericPad
+            onPressNumber={handlePress}
+            onBackspace={handleBackspace}
+          />
 
+          {/* Confirm button */}
           <TouchableOpacity
+            onPress={handleConfirm}
             disabled={loading}
-            style={{ backgroundColor: loading ? '#999' : '#006644', padding: 15, borderRadius: 8, alignItems: 'center', width: '60%', marginTop: 20 }}
-            onPress={() => handleConfirm()}
+            style={{
+              width: "100%",
+              borderRadius: 10,
+              backgroundColor: "#006644",
+              alignItems: "center",
+              marginTop: 20,
+              paddingVertical: 14,
+              opacity: loading ? 0.6 : 1,
+            }}
           >
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 16 }}>{t('farmerOtp.confirm')}</Text>}
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
+                {t("farmerOtp.confirm") || "Confirm"}
+              </Text>
+            )}
           </TouchableOpacity>
+
+          {/* Resend / Edit phone */}
+          <Text
+            style={{
+              color: "#006644",
+              marginTop: 15,
+              fontSize: 14,
+              textAlign: "center",
+            }}
+          >
+            {t("farmerOtp.noOtp") || "Didn't receive OTP?"}{" "}
+            <Text
+              style={{ fontWeight: "bold", fontSize: 16 }}
+              onPress={() => navigation.goBack()}
+            >
+              {t("farmerOtp.editPhone") || "Edit Phone"}
+            </Text>
+          </Text>
         </ScrollView>
       </ImageBackground>
     </SafeAreaView>

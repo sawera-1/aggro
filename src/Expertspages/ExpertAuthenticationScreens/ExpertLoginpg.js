@@ -127,7 +127,7 @@ const ExpertLogin = ({ navigation }) => {
             style={styles.button}
             disabled={loading}
           >
-            <Text style={styles.buttonText}>Send OTP</Text>
+            <Text style={styles.buttonText}>Continue</Text>
           </TouchableOpacity>
 
           {/* Don't have an account? Sign Up */}

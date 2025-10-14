@@ -30,19 +30,7 @@ export default function App() {
   return (
     <Provider store={store}> 
       <PersistGate loading={null} persistor={persistor}> 
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor="#006644"
-          translucent={false}
-        />
-        {Platform.OS === "android" && (
-          <View
-            style={{
-              height: StatusBar.currentHeight,
-              backgroundColor: "#006644",
-            }}
-          />
-        )}
+       
 
         <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
             <StatusBar

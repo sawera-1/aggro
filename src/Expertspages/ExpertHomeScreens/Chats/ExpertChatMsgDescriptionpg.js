@@ -1,57 +1,124 @@
-import React, { useState } from 'react';
+// 📄 ExpertChatDes.js
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   Image,
   TouchableOpacity,
   ScrollView,
-  Modal
-} from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useTranslation } from 'react-i18next';
+  Modal,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import firestore from "@react-native-firebase/firestore";
+import auth from "@react-native-firebase/auth";
+
 export default function ExpertChatDes() {
   const route = useRoute();
   const navigation = useNavigation();
-  const { t } = useTranslation();
-  const { chatName, chatPhone, chatImage } = route.params || {};
+  const { userId } = route.params || {}; 
+  const currentUserId = auth().currentUser?.uid;
+
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [blockModalVisible, setBlockModalVisible] = useState(false);
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      {/* Background Image */}
-      <Image
-        source={require('../../../images/background.jpg')}
-        style={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          resizeMode: 'cover',
-          opacity: 0.9,
-        }}
-      />
+  //  Fetch farmer info
+  useEffect(() => {
+    if (!userId) return;
 
-      {/* Top Bar */}
+    const unsubscribe = firestore()
+      .collection("users")
+      .doc(userId)
+      .onSnapshot(
+        (docSnap) => {
+          if (docSnap.exists) setUserData(docSnap.data());
+          else setUserData(null);
+          setLoading(false);
+        },
+        (error) => {
+          console.error("Error fetching user data:", error);
+          setLoading(false);
+        }
+      );
+
+    return () => unsubscribe();
+  }, [userId]);
+
+  //  Block user
+  const handleBlockUser = async () => {
+    if (!currentUserId || !userId) return;
+    try {
+      await firestore()
+        .collection("blockedUsers")
+        .doc(currentUserId)
+        .collection("list")
+        .doc(userId)
+        .set({
+          blockedUserId: userId,
+          blockedAt: firestore.FieldValue.serverTimestamp(),
+        });
+      Alert.alert("User Blocked", "You have successfully blocked this user.");
+      setBlockModalVisible(false);
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      Alert.alert("Error", "Failed to block user. Please try again.");
+    }
+  };
+
+  //  Report user
+  const handleReportUser = () => {
+    navigation.navigate("ExpertFeedback", { reportedUserId: userId });
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <ActivityIndicator size="large" color="#006644" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <Text style={{ fontSize: 16, color: "#666" }}>User not found.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      {/*  Header */}
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
           paddingHorizontal: 12,
           paddingVertical: 10,
-          backgroundColor: '#006644',
+          backgroundColor: "#006644",
           elevation: 5,
         }}
       >
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 12 }}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ marginRight: 12 }}
+        >
           <Ionicons name="arrow-back" size={26} color="#fff" />
         </TouchableOpacity>
 
         <Image
           source={
-            chatImage
-              ? (typeof chatImage === 'string' ? { uri: chatImage } : chatImage)
-              : require('../../../images/chdummyimg.png')
+            userData.dpImage
+              ? { uri: userData.dpImage }
+              : require("../../../images/chdummyimg.png")
           }
           style={{
             width: 38,
@@ -59,43 +126,43 @@ export default function ExpertChatDes() {
             borderRadius: 19,
             marginRight: 12,
             borderWidth: 1,
-            borderColor: '#fff',
+            borderColor: "#fff",
           }}
         />
 
         <Text
           style={{
-            color: '#fff',
+            color: "#fff",
             fontSize: 19,
-            fontWeight: 'bold',
+            fontWeight: "bold",
             flexShrink: 1,
           }}
         >
-          {chatName}
+          {userData.name || "Unknown User"}
         </Text>
       </View>
 
-      {/* Scrollable Content */}
+      {/*  Scrollable Info */}
       <ScrollView
         contentContainerStyle={{
           padding: 20,
-          alignItems: 'center',
+          alignItems: "center",
           flexGrow: 1,
         }}
       >
-        {/* Large Circular DP */}
+        {/* Profile DP */}
         <Image
           source={
-            chatImage
-              ? (typeof chatImage === 'string' ? { uri: chatImage } : chatImage)
-              : require('../../../images/chdummyimg.png')
+            userData.dpImage
+              ? { uri: userData.dpImage }
+              : require("../../../images/chdummyimg.png")
           }
           style={{
             width: 130,
             height: 130,
             borderRadius: 65,
             borderWidth: 2.5,
-            borderColor: '#006644',
+            borderColor: "#006644",
             marginBottom: 15,
           }}
         />
@@ -104,70 +171,72 @@ export default function ExpertChatDes() {
         <Text
           style={{
             fontSize: 22,
-            fontWeight: 'bold',
-            color: '#006644',
+            fontWeight: "bold",
+            color: "#006644",
             marginBottom: 6,
           }}
         >
-          {chatName}
+          {userData.name || "N/A"}
         </Text>
 
         {/* Phone */}
-        <Text style={{ fontSize: 15, color: '#444', marginBottom: 18 }}>
-          {t('expertChatDes.phone')}: {chatPhone || 'N/A'}
+        <Text style={{ fontSize: 15, color: "#444", marginBottom: 18 }}>
+          📞 Phone: {userData.phoneNumber || "N/A"}
         </Text>
 
-        {/* Block Button */}
+        {/*  Block Button */}
         <TouchableOpacity
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#cc0000',
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "#cc0000",
             paddingVertical: 15,
             paddingHorizontal: 22,
             borderRadius: 14,
             marginBottom: 18,
-            width: '90%',
-            shadowColor: '#000',
-            shadowOpacity: 0.2,
-            shadowOffset: { width: 0, height: 3 },
-            shadowRadius: 5,
+            width: "90%",
             elevation: 4,
           }}
           onPress={() => setBlockModalVisible(true)}
         >
-          <Ionicons name="close-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-            {t('expertChatDes.blockUser')}
+          <Ionicons
+            name="close-circle"
+            size={22}
+            color="#fff"
+            style={{ marginRight: 10 }}
+          />
+          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+            Block User
           </Text>
         </TouchableOpacity>
 
-        {/* Report Button */}
+        {/*  Report Button */}
         <TouchableOpacity
           style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#ff9900',
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "#ff9900",
             paddingVertical: 15,
             paddingHorizontal: 22,
             borderRadius: 14,
-            width: '90%',
-            shadowColor: '#000',
-            shadowOpacity: 0.2,
-            shadowOffset: { width: 0, height: 3 },
-            shadowRadius: 5,
+            width: "90%",
             elevation: 4,
           }}
-          onPress={() => navigation.navigate('FarmerFeedback')}
+          onPress={handleReportUser}
         >
-          <Ionicons name="alert-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-            {t('expertChatDes.reportUser')}
+          <Ionicons
+            name="alert-circle"
+            size={22}
+            color="#fff"
+            style={{ marginRight: 10 }}
+          />
+          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+            Report User
           </Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Block Confirmation Modal */}
+      {/* 🔹 Block Modal */}
       <Modal
         transparent
         animationType="fade"
@@ -177,49 +246,44 @@ export default function ExpertChatDes() {
         <View
           style={{
             flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            justifyContent: 'center',
-            alignItems: 'center',
+            backgroundColor: "rgba(0,0,0,0.5)",
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
           <View
             style={{
-              backgroundColor: '#e9e9e1',
+              backgroundColor: "#e9e9e1",
               padding: 20,
               borderRadius: 14,
-              width: '85%',
-              shadowColor: '#000',
-              shadowOpacity: 0.2,
-              shadowOffset: { width: 0, height: 3 },
-              shadowRadius: 5,
-              elevation: 4,
-              alignItems: 'center',
+              width: "85%",
+              alignItems: "center",
             }}
           >
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: '600',
+                fontWeight: "600",
                 marginBottom: 15,
-                color: '#333',
-                textAlign: 'center',
+                color: "#333",
+                textAlign: "center",
               }}
             >
-              {t('expertChatDes.blockConfirm')}
+              Are you sure you want to block this user?
             </Text>
 
             <View
               style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                width: '100%',
+                flexDirection: "row",
+                justifyContent: "space-between",
+                width: "100%",
               }}
             >
               <TouchableOpacity
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#006644',
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: "#006644",
                   paddingVertical: 12,
                   paddingHorizontal: 18,
                   borderRadius: 10,
@@ -228,31 +292,38 @@ export default function ExpertChatDes() {
                 }}
                 onPress={() => setBlockModalVisible(false)}
               >
-                <Ionicons name="close" size={20} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                  {t('expertChatDes.cancel')}
+                <Ionicons
+                  name="close"
+                  size={20}
+                  color="#fff"
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={{ color: "#fff", fontSize: 15, fontWeight: "600" }}>
+                  Cancel
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#cc0000',
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: "#cc0000",
                   paddingVertical: 12,
                   paddingHorizontal: 18,
                   borderRadius: 10,
                   flex: 1,
                   marginLeft: 8,
                 }}
-                onPress={() => {
-                  setBlockModalVisible(false);
-                  // Add block user logic here
-                }}
+                onPress={handleBlockUser}
               >
-                <Ionicons name="close-circle" size={20} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                  {t('expertChatDes.block')}
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color="#fff"
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={{ color: "#fff", fontSize: 15, fontWeight: "600" }}>
+                  Block
                 </Text>
               </TouchableOpacity>
             </View>

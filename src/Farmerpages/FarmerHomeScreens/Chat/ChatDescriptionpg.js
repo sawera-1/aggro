@@ -1,38 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   Image,
   TouchableOpacity,
   ScrollView,
-  Modal
+  Modal,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
+
 export default function ChatDescription() {
   const route = useRoute();
   const navigation = useNavigation();
-  const { t } = useTranslation();
-  const { chatName, chatPhone, chatImage } = route.params || {};
+  const { userId } = route.params || {}; 
+  const currentUserId = auth().currentUser?.uid;
+
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [blockModalVisible, setBlockModalVisible] = useState(false);
+
+  //  Fetch user info
+  useEffect(() => {
+    if (!userId) return;
+
+    const unsubscribe = firestore()
+      .collection('users')
+      .doc(userId)
+      .onSnapshot(
+        docSnap => {
+          if (docSnap.exists) setUserData(docSnap.data());
+          else setUserData(null);
+          setLoading(false);
+        },
+        error => {
+          console.error("Error fetching user data:", error);
+          setLoading(false);
+        }
+      );
+
+    return () => unsubscribe();
+  }, [userId]);
+
+  //  Block user
+  const handleBlockUser = async () => {
+    if (!currentUserId || !userId) return;
+    try {
+      await firestore()
+        .collection('blockedUsers')
+        .doc(currentUserId)
+        .collection('list')
+        .doc(userId)
+        .set({
+          blockedUserId: userId,
+          blockedAt: firestore.FieldValue.serverTimestamp(),
+        });
+      Alert.alert('User Blocked', 'You have successfully blocked this user.');
+      setBlockModalVisible(false);
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      Alert.alert('Error', 'Failed to block user. Please try again.');
+    }
+  };
+
+  //  Navigate to report page
+  const handleReportUser = () => {
+    navigation.navigate('FarmerFeedback', { reportedUserId: userId });
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#006644" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ fontSize: 16, color: '#666' }}>User not found.</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      {/* Background Image */}
-      <Image
-        source={require('../../../images/background.jpg')}
-        style={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          resizeMode: 'cover',
-          opacity: 0.9,
-        }}
-      />
-
-      {/* Top Bar */}
+      {/*  Header */}
       <View
         style={{
           flexDirection: 'row',
@@ -49,8 +108,8 @@ export default function ChatDescription() {
 
         <Image
           source={
-            chatImage
-              ? (typeof chatImage === 'string' ? { uri: chatImage } : chatImage)
+            userData.dpImage
+              ? { uri: userData.dpImage }
               : require('../../../images/chdummyimg.png')
           }
           style={{
@@ -71,11 +130,11 @@ export default function ChatDescription() {
             flexShrink: 1,
           }}
         >
-          {chatName}
+          {userData.name || 'Unknown User'}
         </Text>
       </View>
 
-      {/* Scrollable Content */}
+      {/*  Scrollable Info */}
       <ScrollView
         contentContainerStyle={{
           padding: 20,
@@ -83,11 +142,11 @@ export default function ChatDescription() {
           flexGrow: 1,
         }}
       >
-        {/* Large Circular DP */}
+        {/* Profile DP */}
         <Image
           source={
-            chatImage
-              ? (typeof chatImage === 'string' ? { uri: chatImage } : chatImage)
+            userData.dpImage
+              ? { uri: userData.dpImage }
               : require('../../../images/chdummyimg.png')
           }
           style={{
@@ -109,12 +168,27 @@ export default function ChatDescription() {
             marginBottom: 6,
           }}
         >
-          {chatName}
+          {userData.name || 'N/A'}
         </Text>
 
         {/* Phone */}
         <Text style={{ fontSize: 15, color: '#444', marginBottom: 18 }}>
-          {t('chatDescription.phone')}: {chatPhone || 'N/A'}
+          Phone: {userData.phoneNumber || 'N/A'}
+        </Text>
+
+        {/* Qualification */}
+        <Text style={{ fontSize: 16, color: '#333', marginBottom: 6 }}>
+          🎓 {userData.qualification || 'N/A'}
+        </Text>
+
+        {/* Specialization */}
+        <Text style={{ fontSize: 16, color: '#333', marginBottom: 6 }}>
+          🌾 {userData.specialization || 'N/A'}
+        </Text>
+
+        {/* Experience */}
+        <Text style={{ fontSize: 16, color: '#333', marginBottom: 18 }}>
+          ⏱️ {userData.experience || '0'} years experience
         </Text>
 
         {/* Block Button */}
@@ -128,18 +202,12 @@ export default function ChatDescription() {
             borderRadius: 14,
             marginBottom: 18,
             width: '90%',
-            shadowColor: '#000',
-            shadowOpacity: 0.2,
-            shadowOffset: { width: 0, height: 3 },
-            shadowRadius: 5,
             elevation: 4,
           }}
           onPress={() => setBlockModalVisible(true)}
         >
           <Ionicons name="close-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-            {t('chatDescription.blockUser')}
-          </Text>
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Block User</Text>
         </TouchableOpacity>
 
         {/* Report Button */}
@@ -152,22 +220,16 @@ export default function ChatDescription() {
             paddingHorizontal: 22,
             borderRadius: 14,
             width: '90%',
-            shadowColor: '#000',
-            shadowOpacity: 0.2,
-            shadowOffset: { width: 0, height: 3 },
-            shadowRadius: 5,
             elevation: 4,
           }}
-          onPress={() => navigation.navigate('FarmerFeedback')}
+          onPress={handleReportUser}
         >
           <Ionicons name="alert-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-            {t('chatDescription.reportUser')}
-          </Text>
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Report User</Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Block Confirmation Modal */}
+      {/*  Block Modal */}
       <Modal
         transparent
         animationType="fade"
@@ -188,11 +250,6 @@ export default function ChatDescription() {
               padding: 20,
               borderRadius: 14,
               width: '85%',
-              shadowColor: '#000',
-              shadowOpacity: 0.2,
-              shadowOffset: { width: 0, height: 3 },
-              shadowRadius: 5,
-              elevation: 4,
               alignItems: 'center',
             }}
           >
@@ -205,7 +262,7 @@ export default function ChatDescription() {
                 textAlign: 'center',
               }}
             >
-              {t('chatDescription.blockConfirmation')}
+              Are you sure you want to block this user?
             </Text>
 
             <View
@@ -229,9 +286,7 @@ export default function ChatDescription() {
                 onPress={() => setBlockModalVisible(false)}
               >
                 <Ionicons name="close" size={20} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                  {t('chatDescription.cancel')}
-                </Text>
+                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -245,15 +300,10 @@ export default function ChatDescription() {
                   flex: 1,
                   marginLeft: 8,
                 }}
-                onPress={() => {
-                  setBlockModalVisible(false);
-                  
-                }}
+                onPress={handleBlockUser}
               >
                 <Ionicons name="close-circle" size={20} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                  {t('chatDescription.block')}
-                </Text>
+                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Block</Text>
               </TouchableOpacity>
             </View>
           </View>

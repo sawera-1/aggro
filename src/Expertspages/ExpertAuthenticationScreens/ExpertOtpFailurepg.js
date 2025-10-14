@@ -26,11 +26,9 @@ const ExpertOtpFailure = ({ navigation }) => {
           />
 
           {/* Error Text */}
-          <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#ff8d73', marginBottom: 10 }}>
-           {t('otploginFailure.wrong')}
-          </Text>
+          
           <Text style={{ fontSize: 16, color: '#ff8d73', textAlign: 'center', marginBottom: 20 }}>
-           {t('otploginFailure.verified')}
+           Your OTP has not been verified. Try Again!!
           </Text>
 
           {/* Retry Button */}
