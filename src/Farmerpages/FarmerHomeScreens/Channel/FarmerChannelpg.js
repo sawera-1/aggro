@@ -8,25 +8,70 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { getChannels } from "../../../Helper/firebaseHelper";
+import {
+  getAllChannels,
+  getFollowedChannels,
+  followChannel,
+  unfollowChannel,
+} from "../../../Helper/firebaseHelper";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 const ChannelsScreen = ({ navigation }) => {
   const { t } = useTranslation();
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch channels and followed state
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [allChannels, followedChannels] = await Promise.all([
+        getAllChannels(),
+        getFollowedChannels(),
+      ]);
+      const followedIds = followedChannels.map((ch) => ch.id);
+      // Merge: add isFollowed boolean to all channels
+      const merged = allChannels.map((channel) => ({
+        ...channel,
+        isFollowed: followedIds.includes(channel.id),
+      }));
+      setChannels(merged);
+    } catch (e) {
+      Alert.alert("Error", e.message);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const data = await getChannels();
-      setChannels(data);
-      setLoading(false);
-    };
     fetchData();
   }, []);
+
+  const handleFollow = async (channel) => {
+    try {
+      await followChannel(channel.id, {
+        name: channel.name,
+        image: channel.image || "",
+      });
+      fetchData();
+    } catch (e) {
+      Alert.alert("Error", e.message);
+    }
+  };
+
+  const handleUnfollow = async (channel) => {
+    try {
+      await unfollowChannel(channel.id);
+      fetchData();
+    } catch (e) {
+      Alert.alert("Error", e.message);
+    }
+  };
 
   if (loading) {
     return (
@@ -36,12 +81,11 @@ const ChannelsScreen = ({ navigation }) => {
     );
   }
 
-  // 🔍 Filter channels with search
+  // Filter channels with search
   const filteredChannels = channels.filter((channel) =>
     channel.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // 🔖 Dummy "Followed" logic 
   const followedChannels = filteredChannels.filter((ch) => ch.isFollowed);
   const discoverChannels = filteredChannels.filter((ch) => !ch.isFollowed);
 
@@ -52,7 +96,7 @@ const ChannelsScreen = ({ navigation }) => {
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-        {/*  Top Section */}
+        {/* Top Section */}
         <View
           style={{
             paddingHorizontal: 15,
@@ -66,7 +110,6 @@ const ChannelsScreen = ({ navigation }) => {
           <Text style={{ fontSize: 22, fontWeight: "bold", color: "#031501ff" }}>
             {t("channels.title")}
           </Text>
-
           <TouchableOpacity
             onPress={() => navigation.navigate("SettingStack")}
           >
@@ -74,7 +117,7 @@ const ChannelsScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* 🔎 Search Bar */}
+        {/* Search Bar */}
         <View
           style={{
             flexDirection: "row",
@@ -97,9 +140,9 @@ const ChannelsScreen = ({ navigation }) => {
           />
         </View>
 
-        {/* 📋 Channel Sections */}
+        {/* Channel Sections */}
         <ScrollView style={{ flex: 1, paddingHorizontal: 10, marginTop: 10 }}>
-          {/* ⭐ Followed Section */}
+          {/* Followed Section */}
           <Text
             style={{
               fontSize: 20,
@@ -113,15 +156,8 @@ const ChannelsScreen = ({ navigation }) => {
 
           {followedChannels.length > 0 ? (
             followedChannels.map((channel) => (
-              <TouchableOpacity
+              <View
                 key={channel.id}
-                onPress={() =>
-                  navigation.navigate("ChannelMsg", {
-                    name: channel.name,
-                    description: channel.description,
-                    image: require("../../../images/chdummyimg.png"), // dynamic URL ho to { uri: channel.image }
-                  })
-                }
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -132,25 +168,55 @@ const ChannelsScreen = ({ navigation }) => {
                   elevation: 1,
                 }}
               >
-                <Image
-                  source={require("../../../images/chdummyimg.png")}
-                  style={{ width: 50, height: 50, borderRadius: 25 }}
-                />
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: 15,
-                      color: "#000",
-                    }}
-                  >
-                    {channel.name}
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate("ChannelMsg", {
+                      name: channel.name,
+                      description: channel.description,
+                      image: channel.image
+                        ? { uri: channel.image }
+                        : require("../../../images/chdummyimg.png"),
+                    })
+                  }
+                  style={{ flex: 1, flexDirection: "row", alignItems: "center" }}
+                >
+                  <Image
+                    source={
+                      channel.image
+                        ? { uri: channel.image }
+                        : require("../../../images/chdummyimg.png")
+                    }
+                    style={{ width: 50, height: 50, borderRadius: 25 }}
+                  />
+                  <View style={{ marginLeft: 10 }}>
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        color: "#000",
+                      }}
+                    >
+                      {channel.name}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: "#555" }}>
+                      {channel.description}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "#ff9900",
+                    paddingVertical: 6,
+                    paddingHorizontal: 18,
+                    borderRadius: 8,
+                  }}
+                  onPress={() => handleUnfollow(channel)}
+                >
+                  <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                    Unfollow
                   </Text>
-                  <Text style={{ fontSize: 12, color: "#555" }}>
-                    {channel.description}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
             ))
           ) : (
             <Text style={{ margin: 10, color: "#555" }}>
@@ -158,7 +224,7 @@ const ChannelsScreen = ({ navigation }) => {
             </Text>
           )}
 
-          {/* 🔍 Discover Section */}
+          {/* Discover Section */}
           <Text
             style={{
               fontSize: 20,
@@ -172,15 +238,8 @@ const ChannelsScreen = ({ navigation }) => {
 
           {discoverChannels.length > 0 ? (
             discoverChannels.map((channel) => (
-              <TouchableOpacity
+              <View
                 key={channel.id}
-                onPress={() =>
-                  navigation.navigate("ChannelMsg", {
-                    name: channel.name,
-                    description: channel.description,
-                    image: require("../../../images/chdummyimg.png"),
-                  })
-                }
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -191,25 +250,55 @@ const ChannelsScreen = ({ navigation }) => {
                   elevation: 1,
                 }}
               >
-                <Image
-                  source={require("../../../images/chdummyimg.png")}
-                  style={{ width: 50, height: 50, borderRadius: 25 }}
-                />
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: 15,
-                      color: "#000",
-                    }}
-                  >
-                    {channel.name}
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate("ChannelMsg", {
+                      name: channel.name,
+                      description: channel.description,
+                      image: channel.image
+                        ? { uri: channel.image }
+                        : require("../../../images/chdummyimg.png"),
+                    })
+                  }
+                  style={{ flex: 1, flexDirection: "row", alignItems: "center" }}
+                >
+                  <Image
+                    source={
+                      channel.image
+                        ? { uri: channel.image }
+                        : require("../../../images/chdummyimg.png")
+                    }
+                    style={{ width: 50, height: 50, borderRadius: 25 }}
+                  />
+                  <View style={{ marginLeft: 10 }}>
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: 15,
+                        color: "#000",
+                      }}
+                    >
+                      {channel.name}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: "#555" }}>
+                      {channel.description}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "#006644",
+                    paddingVertical: 6,
+                    paddingHorizontal: 18,
+                    borderRadius: 8,
+                  }}
+                  onPress={() => handleFollow(channel)}
+                >
+                  <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                    Follow
                   </Text>
-                  <Text style={{ fontSize: 12, color: "#555" }}>
-                    {channel.description}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
             ))
           ) : (
             <Text style={{ margin: 10, color: "#555" }}>

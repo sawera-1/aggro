@@ -16,7 +16,7 @@ const RootNavigator = () => {
   const role = useSelector((state) => state.home.role);
 console.log("Current role:", role);
 
-  switch ("farmer") {//chng into role after cheakin
+  switch ("expert") {//chng into role after cheakin
     case "farmer":
       return <FarmerStack />;
     case "expert":
