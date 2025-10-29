@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   SafeAreaView,
   Alert,
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   Image,
   StyleSheet,
@@ -33,6 +34,9 @@ export default function ChatScreen({ route, navigation }) {
   const [selectedImages, setSelectedImages] = useState([]);
   const [imageLoading, setImageLoading] = useState(false);
   const [fullImageUri, setFullImageUri] = useState(null);
+  const [contactsModalVisible, setContactsModalVisible] = useState(false);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [contacts, setContacts] = useState([]);
 
   const CLOUDINARY_CLOUD_NAME = 'dumgs9cp4';
   const CLOUDINARY_UPLOAD_PRESET = 'react_native_uploads';
@@ -122,6 +126,110 @@ export default function ChatScreen({ route, navigation }) {
     };
     markAsRead();
   }, [messages, current_user, chatId, navigation]);
+
+  // Contacts picker modal (local state, debounce, memo; per-contact Send)
+  const ContactsModal = React.memo(() => {
+    const [searchRaw, setSearchRaw] = useState('');
+    const [search, setSearch] = useState('');
+    const inputRef = React.useRef(null);
+
+    useEffect(() => {
+      const t = setTimeout(() => setSearch(searchRaw.trim()), 150);
+      return () => clearTimeout(t);
+    }, [searchRaw]);
+
+    useEffect(() => {
+      if (contactsModalVisible) setTimeout(() => inputRef.current?.focus(), 0);
+    }, [contactsModalVisible]);
+
+    const filtered = useMemo(() => {
+      const q = search.toLowerCase();
+      if (!q) return contacts;
+      return contacts.filter(c => {
+        const name = (c.displayName || `${c.givenName || ''} ${c.familyName || ''}`).toLowerCase();
+        const phonesJoined = (c.phoneNumbers || []).map(p => p.number).join(' ').toLowerCase();
+        return name.includes(q) || phonesJoined.includes(q);
+      });
+    }, [contacts, search]);
+
+    return (
+      <Modal visible={contactsModalVisible} animationType="slide" transparent>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.plusModalContainer}>
+            <View style={{ alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={styles.modalTitle}>Select Contact</Text>
+              <TouchableOpacity onPress={() => setContactsModalVisible(false)} style={styles.closeIconBtn}>
+                <Icon name="close" size={22} color="#075E54" />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              placeholder="Search contacts"
+              placeholderTextColor="#888"
+              value={searchRaw}
+              onChangeText={setSearchRaw}
+              style={styles.searchInput}
+              autoFocus
+              blurOnSubmit={false}
+              ref={inputRef}
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
+            />
+            {contactsLoading ? (
+              <ActivityIndicator color="#075E54" />
+            ) : (
+              <>
+                <FlatList
+                  data={filtered}
+                  keyExtractor={(item) => item.recordID}
+                  style={{ alignSelf: 'stretch', maxHeight: 420 }}
+                  keyboardShouldPersistTaps="always"
+                  keyboardDismissMode="on-drag"
+                  removeClippedSubviews={false}
+                  ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: '#eee' }} />}
+                  ListEmptyComponent={() => (
+                    <View style={styles.emptyState}>
+                      <Icon name="search" size={36} color="#bbb" />
+                      <Text style={styles.emptyTitle}>No contacts found</Text>
+                      <Text style={styles.emptySub}>Try another search query</Text>
+                    </View>
+                  )}
+                  renderItem={({ item }) => {
+                    const name = item.displayName || `${item.givenName || ''} ${item.familyName || ''}`.trim();
+                    const phones = item.phoneNumbers || [];
+                    const initials = (name || 'U').trim().split(' ').map(x => x[0]).slice(0,2).join('').toUpperCase();
+                    return (
+                      <View style={styles.contactRow}>
+                        <View style={styles.avatarCircle}>
+                          <Text style={styles.avatarText}>{initials}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.contactName}>{name || 'Unnamed'}</Text>
+                          {phones.slice(0,1).map((p, idx) => (
+                            <Text key={idx} style={styles.contactPhone}>{p.label ? `${p.label}: ` : ''}{p.number}</Text>
+                          ))}
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => handleSendContact(item)}
+                          style={styles.miniSendBtnGreen}
+                          activeOpacity={0.9}
+                        >
+                          <Text style={{ color: '#fff', fontWeight: '700' }}>Send</Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  }}
+                />
+              </>
+            )}
+            <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setContactsModalVisible(false)}>
+              <Text style={{ color: '#075E54', fontWeight: '600' }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  });
 
   // Send text message
   const onSend = useCallback(async (msgs = []) => {
@@ -236,25 +344,50 @@ export default function ChatScreen({ route, navigation }) {
   // Contact logic
   const handleShareContact = async () => {
     try {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_CONTACTS);
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) return Alert.alert('Permission', 'Contacts permission is required.');
+      // Cross-platform permission using react-native-contacts helpers
+      let perm = await Contacts.checkPermission();
+      if (perm === 'undefined' || perm === 'denied') {
+        perm = await Contacts.requestPermission();
       }
-      const list = await Contacts.getAll();
-      if (!list.length) return Alert.alert('Contacts', 'No contacts found.');
 
-      const c = list[0];
-      const phone = c.phoneNumbers?.[0]?.number || '';
+      if (perm !== 'authorized') {
+        return Alert.alert(
+          'Permission needed',
+          'Contacts permission is required to pick and send a contact. You can enable it in App Settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings?.() },
+          ]
+        );
+      }
+
+      setContactsLoading(true);
+      const list = await Contacts.getAll();
+      setContacts(list);
+      setContactsModalVisible(true);
+      setModalVisible(false);
+    } catch {
+      Alert.alert('Error', 'Failed to load contacts.');
+    } finally {
+      setContactsLoading(false);
+    }
+  };
+
+  const handleSendContact = async (contact) => {
+    try {
+      const name = contact.displayName || `${contact.givenName || ''} ${contact.familyName || ''}`.trim();
+      const phone = contact.phoneNumbers?.[0]?.number || '';
+      if (!phone && !name) return Alert.alert('Contacts', 'Selected contact has no name or phone.');
       await firestore().collection('chats').doc(chatId).collection('messages').add({
         type: 'contact',
-        contactName: c.displayName || `${c.givenName || ''} ${c.familyName || ''}`.trim(),
+        contactName: name,
         contactPhone: phone,
         senderId: current_user,
         receiverId: second_user,
         createdAt: firestore.FieldValue.serverTimestamp(),
         readBy: { [current_user]: firestore.FieldValue.serverTimestamp() },
       });
-      setModalVisible(false);
+      setContactsModalVisible(false);
     } catch {
       Alert.alert('Error', 'Failed to share contact.');
     }
@@ -384,6 +517,7 @@ export default function ChatScreen({ route, navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#ECE5DD' }}>
       <FullImageModal />
       <PlusModal />
+      <ContactsModal />
 
       {/* Top Bar */}
       <View style={styles.topBar}>
@@ -446,7 +580,14 @@ export default function ChatScreen({ route, navigation }) {
           const isCurrentUser = currentMessage.user._id === current_user;
           return (
             <View style={[styles.bubbleWrapper, { alignSelf: isCurrentUser ? 'flex-end' : 'flex-start' }]}>
-              {currentMessage.text && <Bubble {...props} wrapperStyle={{ right: styles.rightBubble, left: styles.leftBubble }} textStyle={{ right: styles.rightText, left: styles.leftText }} renderTime={() => null} />}
+              {currentMessage.text && (
+                <Bubble
+                  {...props}
+                  wrapperStyle={{ right: styles.rightBubble, left: styles.leftBubble }}
+                  textStyle={{ right: styles.rightText, left: styles.leftText }}
+                  renderTime={() => null}
+                />
+              )}
               {(currentMessage.image || currentMessage.imageUrl) && (
                 <TouchableOpacity
                   activeOpacity={0.95}
@@ -464,10 +605,46 @@ export default function ChatScreen({ route, navigation }) {
                   />
                 </TouchableOpacity>
               )}
-              <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
-                <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                {isCurrentUser && <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>{currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}</Text>}
-              </View>
+              {currentMessage.type === 'contact' && (
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => {
+                    if (currentMessage.contactPhone) {
+                      Linking.openURL(`tel:${currentMessage.contactPhone}`);
+                    }
+                  }}
+                  style={[isCurrentUser ? styles.rightBubble : styles.leftBubble, styles.contactBubble]}
+                >
+                  <View style={styles.contactInlineRow}>
+                    <View style={styles.contactInlineIcon}>
+                      <Icon name="person" size={18} color="#075E54" />
+                    </View>
+                    <Text style={styles.contactInlineName} numberOfLines={1}>
+                      {currentMessage.contactName || 'Contact'}
+                    </Text>
+                  </View>
+                  {!!currentMessage.contactPhone && (
+                    <>
+                      <View style={styles.contactDivider} />
+                      <Text style={styles.contactInlinePhone}>{currentMessage.contactPhone}</Text>
+                    </>
+                  )}
+                  <View style={styles.timeTickContainer}>
+                    <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    {isCurrentUser && (
+                      <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>
+                        {currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              )}
+              {currentMessage.type !== 'contact' && (
+                <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
+                  <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                  {isCurrentUser && <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>{currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}</Text>}
+                </View>
+              )}
             </View>
           );
         }}
@@ -501,4 +678,19 @@ const styles = StyleSheet.create({
   plusOptionText: { fontSize: 13, color: '#075E54', marginTop: 5, fontWeight: '600' },
   modalCancelBtn: { marginTop: 18, paddingVertical: 8, paddingHorizontal: 22, borderRadius: 8, backgroundColor: '#e6f3ef' },
   modalSendBtn: { marginTop: 5, paddingVertical: 8, paddingHorizontal: 22, borderRadius: 8, backgroundColor: '#075E54', alignSelf: 'flex-end' },
+  searchInput: { alignSelf: 'stretch', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10 },
+  contactRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 8 },
+  contactName: { fontSize: 15, fontWeight: '600', color: '#222' },
+  contactPhone: { fontSize: 13, color: '#555', marginTop: 2 },
+  emptyState: { alignItems: 'center', paddingVertical: 40 },
+  emptyTitle: { marginTop: 8, fontSize: 16, fontWeight: '700', color: '#666' },
+  emptySub: { fontSize: 13, color: '#999', marginTop: 2 },
+  avatarCircle: { width: 36, height: 36, borderRadius: 18, marginRight: 10, backgroundColor: '#d9efe6', alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: '#075E54', fontWeight: '700' },
+  miniSendBtnGreen: { backgroundColor: '#006644', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 },
+  contactInlineRow: { flexDirection: 'row', alignItems: 'center' },
+  contactInlineIcon: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#e6f3ef', alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+  contactInlineName: { fontSize: 15, fontWeight: '700', color: '#102a43' },
+  contactInlinePhone: { fontSize: 13, color: '#4a5568', marginTop: 1 },
+  contactBubble: { position: 'relative', paddingRight: 56, paddingTop: 4, paddingBottom: 4, marginTop: 4, marginBottom: 2 },
 });
