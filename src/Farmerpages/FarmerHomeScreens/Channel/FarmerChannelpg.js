@@ -11,65 +11,98 @@ import {
   Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import {
-  getAllChannels,
-  getFollowedChannels,
-  followChannel,
-  unfollowChannel,
-} from "../../../Helper/firebaseHelper";
-import { useTranslation } from "react-i18next";
+import firestore from "@react-native-firebase/firestore";
+import auth from "@react-native-firebase/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
+
 
 const ChannelsScreen = ({ navigation }) => {
   const { t } = useTranslation();
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch channels and followed state
-  const fetchData = async () => {
+  const userId = auth().currentUser?.uid;
+
+  // Fetch all channels + followed channels
+const fetchChannels = async () => {
+  try {
     setLoading(true);
-    try {
-      const [allChannels, followedChannels] = await Promise.all([
-        getAllChannels(),
-        getFollowedChannels(),
-      ]);
-      const followedIds = followedChannels.map((ch) => ch.id);
-      // Merge: add isFollowed boolean to all channels
-      const merged = allChannels.map((channel) => ({
-        ...channel,
-        isFollowed: followedIds.includes(channel.id),
-      }));
-      setChannels(merged);
-    } catch (e) {
-      Alert.alert("Error", e.message);
-    }
+
+    const [allSnap, followSnap] = await Promise.all([
+      firestore().collection("channels").get(),
+      firestore()
+        .collection("users")
+        .doc(userId)
+        .collection("followedChannels")
+        .get(),
+    ]);
+
+    // Get all channels
+    const allChannels = allSnap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      image: doc.data().imageUrl || "", // ✅ use imageUrl field directly
+    }));
+
+    // Get followed channel IDs
+    const followedIds = followSnap.docs.map((doc) => doc.id);
+
+    // Merge followed info
+    const merged = allChannels.map((channel) => ({
+      ...channel,
+      isFollowed: followedIds.includes(channel.id),
+    }));
+
+    setChannels(merged);
+  } catch (err) {
+    console.error("Error fetching channels:", err);
+    Alert.alert("Error", "Failed to load channels");
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   useEffect(() => {
-    fetchData();
+    fetchChannels();
   }, []);
 
+
+
+  
+  // Follow channel
   const handleFollow = async (channel) => {
-    try {
-      await followChannel(channel.id, {
+  try {
+    await firestore()
+      .collection("users")
+      .doc(userId)
+      .collection("followedChannels")
+      .doc(channel.id)
+      .set({
         name: channel.name,
         image: channel.image || "",
+        followedAt: firestore.FieldValue.serverTimestamp(), // ✅ timestamp
       });
-      fetchData();
-    } catch (e) {
-      Alert.alert("Error", e.message);
-    }
-  };
+    fetchChannels(); // refresh UI
+  } catch (err) {
+    Alert.alert("Error", "Failed to follow channel");
+  }
+};
 
+
+  // Unfollow channel
   const handleUnfollow = async (channel) => {
     try {
-      await unfollowChannel(channel.id);
-      fetchData();
-    } catch (e) {
-      Alert.alert("Error", e.message);
+      await firestore()
+        .collection("users")
+        .doc(userId)
+        .collection("followedChannels")
+        .doc(channel.id)
+        .delete();
+      fetchChannels();
+    } catch (err) {
+      Alert.alert("Error", "Failed to unfollow channel");
     }
   };
 
@@ -81,13 +114,12 @@ const ChannelsScreen = ({ navigation }) => {
     );
   }
 
-  // Filter channels with search
-  const filteredChannels = channels.filter((channel) =>
-    channel.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtered = channels.filter((ch) =>
+    ch.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const followedChannels = filteredChannels.filter((ch) => ch.isFollowed);
-  const discoverChannels = filteredChannels.filter((ch) => !ch.isFollowed);
+  const followed = filtered.filter((ch) => ch.isFollowed);
+  const discover = filtered.filter((ch) => !ch.isFollowed);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -96,7 +128,7 @@ const ChannelsScreen = ({ navigation }) => {
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-        {/* Top Section */}
+        {/* Header */}
         <View
           style={{
             paddingHorizontal: 15,
@@ -108,11 +140,9 @@ const ChannelsScreen = ({ navigation }) => {
           }}
         >
           <Text style={{ fontSize: 22, fontWeight: "bold", color: "#031501ff" }}>
-            {t("channels.title")}
+            Channels
           </Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("SettingStack")}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate("SettingStack")}>
             <Icon name="settings" size={26} color="#031501ff" />
           </TouchableOpacity>
         </View>
@@ -132,7 +162,7 @@ const ChannelsScreen = ({ navigation }) => {
         >
           <Icon name="search" size={20} color="#888" />
           <TextInput
-            placeholder={t("channels.searchPlaceholder")}
+            placeholder="Search Channels"
             placeholderTextColor="#888"
             style={{ flex: 1, marginLeft: 8, color: "#000" }}
             value={searchQuery}
@@ -140,7 +170,7 @@ const ChannelsScreen = ({ navigation }) => {
           />
         </View>
 
-        {/* Channel Sections */}
+        {/* Sections */}
         <ScrollView style={{ flex: 1, paddingHorizontal: 10, marginTop: 10 }}>
           {/* Followed Section */}
           <Text
@@ -151,76 +181,28 @@ const ChannelsScreen = ({ navigation }) => {
               marginVertical: 5,
             }}
           >
-            {t("channels.following")}
+            Following
           </Text>
 
-          {followedChannels.length > 0 ? (
-            followedChannels.map((channel) => (
-              <View
+          {followed.length > 0 ? (
+            followed.map((channel) => (
+              <ChannelCard
                 key={channel.id}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#fff",
-                  padding: 10,
-                  borderRadius: 10,
-                  marginBottom: 8,
-                  elevation: 1,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate("ChannelMsg", {
-                      name: channel.name,
-                      description: channel.description,
-                      image: channel.image
-                        ? { uri: channel.image }
-                        : require("../../../images/chdummyimg.png"),
-                    })
-                  }
-                  style={{ flex: 1, flexDirection: "row", alignItems: "center" }}
-                >
-                  <Image
-                    source={
-                      channel.image
-                        ? { uri: channel.image }
-                        : require("../../../images/chdummyimg.png")
-                    }
-                    style={{ width: 50, height: 50, borderRadius: 25 }}
-                  />
-                  <View style={{ marginLeft: 10 }}>
-                    <Text
-                      style={{
-                        fontWeight: "bold",
-                        fontSize: 15,
-                        color: "#000",
-                      }}
-                    >
-                      {channel.name}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: "#555" }}>
-                      {channel.description}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#ff9900",
-                    paddingVertical: 6,
-                    paddingHorizontal: 18,
-                    borderRadius: 8,
-                  }}
-                  onPress={() => handleUnfollow(channel)}
-                >
-                  <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                    Unfollow
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                channel={channel}
+                onPress={() =>
+  navigation.navigate("ChannelMsg", {
+    channelId: channel.id,      
+    channelData: channel,        
+  })
+                }
+                buttonTitle="Unfollow"
+                buttonColor="#ff9900"
+                onButtonPress={() => handleUnfollow(channel)}
+              />
             ))
           ) : (
             <Text style={{ margin: 10, color: "#555" }}>
-              {t("channels.noFollowed")}
+              You are not following any channels.
             </Text>
           )}
 
@@ -233,76 +215,31 @@ const ChannelsScreen = ({ navigation }) => {
               marginVertical: 5,
             }}
           >
-            {t("channels.discover")}
+            Discover
           </Text>
 
-          {discoverChannels.length > 0 ? (
-            discoverChannels.map((channel) => (
-              <View
+          {discover.length > 0 ? (
+            discover.map((channel) => (
+              <ChannelCard
                 key={channel.id}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#fff",
-                  padding: 10,
-                  borderRadius: 10,
-                  marginBottom: 8,
-                  elevation: 1,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate("ChannelMsg", {
-                      name: channel.name,
-                      description: channel.description,
-                      image: channel.image
-                        ? { uri: channel.image }
-                        : require("../../../images/chdummyimg.png"),
-                    })
-                  }
-                  style={{ flex: 1, flexDirection: "row", alignItems: "center" }}
-                >
-                  <Image
-                    source={
-                      channel.image
-                        ? { uri: channel.image }
-                        : require("../../../images/chdummyimg.png")
-                    }
-                    style={{ width: 50, height: 50, borderRadius: 25 }}
-                  />
-                  <View style={{ marginLeft: 10 }}>
-                    <Text
-                      style={{
-                        fontWeight: "bold",
-                        fontSize: 15,
-                        color: "#000",
-                      }}
-                    >
-                      {channel.name}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: "#555" }}>
-                      {channel.description}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#006644",
-                    paddingVertical: 6,
-                    paddingHorizontal: 18,
-                    borderRadius: 8,
-                  }}
-                  onPress={() => handleFollow(channel)}
-                >
-                  <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                    Follow
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                channel={channel}
+                onPress={() =>
+                  navigation.navigate("ChannelMsg", {
+                    name: channel.name,
+                    description: channel.description,
+                    image: channel.image
+                      ? { uri: channel.image }
+                      : require("../../../images/chdummyimg.png"),
+                  })
+                }
+                buttonTitle="Follow"
+                buttonColor="#006644"
+                onButtonPress={() => handleFollow(channel)}
+              />
             ))
           ) : (
             <Text style={{ margin: 10, color: "#555" }}>
-              {t("channels.noData")}
+              No channels to discover.
             </Text>
           )}
         </ScrollView>
@@ -310,5 +247,53 @@ const ChannelsScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
+// Reusable card component
+const ChannelCard = ({ channel, onPress, buttonTitle, buttonColor, onButtonPress }) => (
+  <View
+    style={{
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#fff",
+      padding: 10,
+      borderRadius: 10,
+      marginBottom: 8,
+      elevation: 1,
+    }}
+  >
+    <TouchableOpacity
+      onPress={onPress}
+      style={{ flex: 1, flexDirection: "row", alignItems: "center" }}
+    >
+      <Image
+        source={
+          channel.image
+            ? { uri: channel.image }
+            : require("../../../images/chdummyimg.png")
+        }
+        style={{ width: 50, height: 50, borderRadius: 25 }}
+      />
+      <View style={{ marginLeft: 10 }}>
+        <Text style={{ fontWeight: "bold", fontSize: 15, color: "#000" }}>
+          {channel.name}
+        </Text>
+        <Text style={{ fontSize: 12, color: "#555" }}>
+          {channel.description}
+        </Text>
+      </View>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={{
+        backgroundColor: buttonColor,
+        paddingVertical: 6,
+        paddingHorizontal: 18,
+        borderRadius: 8,
+      }}
+      onPress={onButtonPress}
+    >
+      <Text style={{ color: "#fff", fontWeight: "bold" }}>{buttonTitle}</Text>
+    </TouchableOpacity>
+  </View>
+);
 
 export default ChannelsScreen;

@@ -48,7 +48,7 @@ const ExpertChannel = ({ navigation }) => {
         const followingSnap = await firestore()
           .collection('users')
           .doc(user.uid)
-          .collection('followingChannels')
+          .collection('followedChannels')
           .get();
 
         const followingIds = followingSnap.docs.map(doc => doc.data().channelId);

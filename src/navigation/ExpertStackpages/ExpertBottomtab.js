@@ -49,7 +49,7 @@ export default function ExpertBottomTabs() {
       />
 
       <Tab.Screen
-        name="ChatTab"
+        name="EChatTab"
         component={ExpertChatStack}
         options={({ route }) => ({
           tabBarLabel: t('expertBottomTabs.chat'),

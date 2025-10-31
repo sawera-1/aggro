@@ -1,14 +1,54 @@
-import React, { useState } from 'react';
-import {View, Text, Image, TouchableOpacity, ScrollView, Modal, ImageBackground } from 'react-native';
+import React from 'react'; 
+import { View, Text, Image, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
+
 export default function ChannelDescription({ navigation }) {
   const route = useRoute();
-  const { t } = useTranslation(); 
-  const { channelName, channelImage, channelDescription, members, dateCreated } = route.params || {};
-  const [exitModalVisible, setExitModalVisible] = useState(false);
+  const { channelName, channelImage, channelDescription, dateCreated, createdBy, channelId } = route.params || {};
+
+const goToChatWithExpert = async () => {
+  try {
+    // Fetch expert info (creator of the channel)
+    const userDoc = await firestore().collection('users').doc(createdBy).get();
+    if (!userDoc.exists) return alert('Expert not found!');
+
+    const expertData = userDoc.data();
+
+    // Ensure chat doc exists so it shows up in FarmerChat list
+    const me = auth().currentUser?.uid;
+    if (me && createdBy) {
+      const chatId = me < createdBy ? `${me}_${createdBy}` : `${createdBy}_${me}`;
+      const chatRef = firestore().collection('chats').doc(chatId);
+      const chatDoc = await chatRef.get();
+      if (!chatDoc.exists) {
+        await chatRef.set({
+          participants: [me, createdBy],
+          createdAt: firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
+    navigation.navigate('ChatTab', {
+      screen: 'ChatMsg',
+      params: {
+        current_user: auth().currentUser.uid,
+        second_user: createdBy,
+        secondUserName: expertData.name,
+        secondUserPic: expertData.profileImage || expertData.dpImage || null,
+        channelId,
+        channelName,
+      },
+    });
+  } catch (error) {
+    console.log('Error fetching expert data:', error);
+    alert('Failed to load expert info.');
+  }
+};
+
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -43,7 +83,7 @@ export default function ChannelDescription({ navigation }) {
         </View>
 
         <ScrollView contentContainerStyle={{ padding: 20, alignItems: 'center' }}>
-          {/* DP */}
+          {/* Channel DP */}
           <Image
             source={
               channelImage
@@ -60,147 +100,64 @@ export default function ChannelDescription({ navigation }) {
             }}
           />
 
-          {/* Group Info */}
-          <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#006644', marginBottom: 6 }}>
+          {/* Channel Info */}
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#006644', marginBottom: 10 }}>
             {channelName}
           </Text>
-          <Text style={{ fontSize: 15, color: '#444', marginBottom: 6 }}>
-            {t('channelDescription.totalMembers')}: {members || '10'}
+          <Text style={{ fontSize: 16, color: '#555', textAlign: 'center', marginBottom: 10 }}>
+            {channelDescription || "No description available"}
           </Text>
-          <Text style={{ fontSize: 15, color: '#444', marginBottom: 18 }}>
-            {t('channelDescription.dateCreated')}: {dateCreated || '01 Jan 2025'}
-          </Text>
-
-          {/* Description */}
-          <Text style={{ fontSize: 15, color: '#555', textAlign: 'center', marginBottom: 35, paddingHorizontal: 15 }}>
-            {channelDescription || t('channelDescription.noDescription')}
+          <Text style={{ fontSize: 14, color: '#666', marginBottom: 25 }}>
+            Created At: {dateCreated || '01 Jan 2025'}
           </Text>
 
-          {/* Exit Group Button */}
+          {/* Report Button */}
           <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: '#ff9900',
-              paddingVertical: 15,
-              paddingHorizontal: 22,
-              borderRadius: 14,
-              marginBottom: 18,
-              width: '90%',
-              elevation: 4
-            }}
-            onPress={() => setExitModalVisible(true)}
-          >
-            <Ionicons name="exit-outline" size={22} color="#fff" style={{ marginRight: 10 }} />
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-              {t('channelDescription.exitGroup')}
-            </Text>
-          </TouchableOpacity>
+  style={{
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#cc0000',
+    paddingVertical: 15,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+    marginBottom: 18,
+    width: '90%',
+    justifyContent: 'center'
+  }}
+  onPress={() => navigation.navigate('FarmerFeedback', {
+    channelId: route.params.channelId,
+    channelName: channelName,
+    channelImage: channelImage,
+    channelDescription: channelDescription,
+    dateCreated: dateCreated
+  })}
+>
+  <Ionicons name="alert-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
+  <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Report</Text>
+</TouchableOpacity>
 
-          {/* Report Group Button */}
-          <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: '#cc0000',
-              paddingVertical: 15,
-              paddingHorizontal: 22,
-              borderRadius: 14,
-              marginBottom: 18,
-              width: '90%',
-              elevation: 4
-            }}
-            onPress={() => navigation.navigate('FarmerFeedback')}
-          >
-            <Ionicons name="alert-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-              {t('channelDescription.reportGroup')}
-            </Text>
-          </TouchableOpacity>
 
           {/* Chat with Expert Button */}
-          <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: '#006644',
-              paddingVertical: 15,
-              paddingHorizontal: 22,
-              borderRadius: 14,
-              width: '90%',
-              elevation: 4
-            }}
-            onPress={() => navigation.navigate('ChatWithExpert', { channelName })}
-          >
-            <Ionicons name="chatbubble-ellipses" size={22} color="#fff" style={{ marginRight: 10 }} />
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-              {t('channelDescription.chatWithExpert')}
-            </Text>
-          </TouchableOpacity>
+<TouchableOpacity 
+  style={{
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#006644',
+    paddingVertical: 15,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+    width: '90%',
+    justifyContent: 'center'
+  }}
+  onPress={goToChatWithExpert}
+>
+  <Ionicons name="chatbubble-ellipses" size={22} color="#fff" style={{ marginRight: 10 }} />
+  <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Chat with Expert</Text>
+</TouchableOpacity>
+
+
+
         </ScrollView>
-
-        {/* Exit Group Modal */}
-        <Modal transparent animationType="fade" visible={exitModalVisible} onRequestClose={() => setExitModalVisible(false)}>
-          <View style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-            <View style={{
-              backgroundColor: '#e9e9e1',
-              padding: 20,
-              borderRadius: 14,
-              width: '85%',
-              elevation: 4,
-              alignItems: 'center',
-            }}>
-              <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 15, color: '#333', textAlign: 'center' }}>
-                {t('channelDescription.exitConfirmation')}
-              </Text>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: '#006644',
-                    paddingVertical: 12,
-                    paddingHorizontal: 18,
-                    borderRadius: 10,
-                    flex: 1,
-                    marginRight: 8,
-                  }}
-                  onPress={() => setExitModalVisible(false)}
-                >
-                  <Ionicons name="close" size={20} color="#fff" style={{ marginRight: 6 }} />
-                  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                    {t('channelDescription.cancel')}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: '#ff9900',
-                    paddingVertical: 12,
-                    paddingHorizontal: 18,
-                    borderRadius: 10,
-                    flex: 1,
-                    marginLeft: 8,
-                  }}
-                  onPress={() => setExitModalVisible(false)}
-                >
-                  <Ionicons name="exit-outline" size={20} color="#fff" style={{ marginRight: 6 }} />
-                  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                    {t('channelDescription.exit')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
       </ImageBackground>
     </SafeAreaView>
   );

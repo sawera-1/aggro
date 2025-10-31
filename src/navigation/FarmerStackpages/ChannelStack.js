@@ -3,6 +3,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ChannelsScreen from '../../Farmerpages/FarmerHomeScreens/Channel/FarmerChannelpg';
 import ChannelMsgScreen from '../../Farmerpages/FarmerHomeScreens/Channel/ChannelMsgpg';
 import ChannelDescription from '../../Farmerpages/FarmerHomeScreens/Channel/ChannelDescriptionpg';
+import ChatScreen from '../../Farmerpages/FarmerHomeScreens/Chat/ChatMsgpg';
+import ChatHomeScreen from '../../Farmerpages/FarmerHomeScreens/Chat/FarmerChatpg';
+import ChatDescription from '../../Farmerpages/FarmerHomeScreens/Chat/ChatDescriptionpg';
 
 
 
@@ -14,6 +17,7 @@ const ChannelStack = () => {
       <Stack.Screen name="Channels" component={ChannelsScreen} />
       <Stack.Screen name="ChannelMsg" component={ChannelMsgScreen} />
       <Stack.Screen name="ChannelDes" component={ChannelDescription} />
+      
     </Stack.Navigator>
   );
 };

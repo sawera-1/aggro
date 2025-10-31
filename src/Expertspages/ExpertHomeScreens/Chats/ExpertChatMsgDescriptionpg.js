@@ -1,335 +1,230 @@
-// 📄 ExpertChatDes.js
 import React, { useState, useEffect } from "react";
 import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-  Modal,
-  Alert,
-  ActivityIndicator,
+    View,
+    Text,
+    Image,
+    TouchableOpacity,
+    ScrollView,
+    Alert, // Keep Alert for error handling
+    ActivityIndicator,
+    StyleSheet, // Added StyleSheet for cleaner code
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import firestore from "@react-native-firebase/firestore";
-import auth from "@react-native-firebase/auth";
+// import auth from "@react-native-firebase/auth"; // Not strictly needed for this simplified view
 
 export default function ExpertChatDes() {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const { userId } = route.params || {}; 
-  const currentUserId = auth().currentUser?.uid;
+    const route = useRoute();
+    const navigation = useNavigation();
+    // Assuming 'userId' is passed from the chat screen
+    const { userId } = route.params || {}; 
 
-  const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [blockModalVisible, setBlockModalVisible] = useState(false);
+    const [userData, setUserData] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-  //  Fetch farmer info
-  useEffect(() => {
-    if (!userId) return;
-
-    const unsubscribe = firestore()
-      .collection("users")
-      .doc(userId)
-      .onSnapshot(
-        (docSnap) => {
-          if (docSnap.exists) setUserData(docSnap.data());
-          else setUserData(null);
-          setLoading(false);
-        },
-        (error) => {
-          console.error("Error fetching user data:", error);
-          setLoading(false);
+    /**
+     * Fetch farmer info from Firestore
+     */
+    useEffect(() => {
+        if (!userId) {
+            setLoading(false);
+            return;
         }
-      );
 
-    return () => unsubscribe();
-  }, [userId]);
+        const unsubscribe = firestore()
+            .collection("users")
+            .doc(userId)
+            .onSnapshot(
+                (docSnap) => {
+                    if (docSnap.exists) setUserData(docSnap.data());
+                    else setUserData(null);
+                    setLoading(false);
+                },
+                (error) => {
+                    console.error("Error fetching user data:", error);
+                    Alert.alert("Error", "Failed to load user information.");
+                    setLoading(false);
+                }
+            );
 
-  //  Block user
-  const handleBlockUser = async () => {
-    if (!currentUserId || !userId) return;
-    try {
-      await firestore()
-        .collection("blockedUsers")
-        .doc(currentUserId)
-        .collection("list")
-        .doc(userId)
-        .set({
-          blockedUserId: userId,
-          blockedAt: firestore.FieldValue.serverTimestamp(),
-        });
-      Alert.alert("User Blocked", "You have successfully blocked this user.");
-      setBlockModalVisible(false);
-    } catch (error) {
-      console.error("Error blocking user:", error);
-      Alert.alert("Error", "Failed to block user. Please try again.");
+        return () => unsubscribe();
+    }, [userId]);
+
+    /**
+     * Navigate to the ExpertFeedback screen for reporting
+     */
+    const handleReportUser = () => {
+        // Navigates to the feedback page, passing the user's ID to be reported
+        navigation.navigate("FarmerFeedback", { reportedUserId: userId });
+    };
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#006644" />
+            </SafeAreaView>
+        );
     }
-  };
 
-  //  Report user
-  const handleReportUser = () => {
-    navigation.navigate("ExpertFeedback", { reportedUserId: userId });
-  };
+    if (!userData) {
+        return (
+            <SafeAreaView style={styles.loadingContainer}>
+                <Text style={styles.notFoundText}>User not found or ID missing.</Text>
+            </SafeAreaView>
+        );
+    }
 
-  if (loading) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-      >
-        <ActivityIndicator size="large" color="#006644" />
-      </SafeAreaView>
-    );
-  }
+        <SafeAreaView style={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    style={styles.backButton}
+                >
+                    <Ionicons name="arrow-back" size={26} color="#fff" />
+                </TouchableOpacity>
 
-  if (!userData) {
-    return (
-      <SafeAreaView
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-      >
-        <Text style={{ fontSize: 16, color: "#666" }}>User not found.</Text>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      {/*  Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          backgroundColor: "#006644",
-          elevation: 5,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ marginRight: 12 }}
-        >
-          <Ionicons name="arrow-back" size={26} color="#fff" />
-        </TouchableOpacity>
-
-        <Image
-          source={
-            userData.dpImage
-              ? { uri: userData.dpImage }
-              : require("../../../images/chdummyimg.png")
-          }
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 19,
-            marginRight: 12,
-            borderWidth: 1,
-            borderColor: "#fff",
-          }}
-        />
-
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 19,
-            fontWeight: "bold",
-            flexShrink: 1,
-          }}
-        >
-          {userData.name || "Unknown User"}
-        </Text>
-      </View>
-
-      {/*  Scrollable Info */}
-      <ScrollView
-        contentContainerStyle={{
-          padding: 20,
-          alignItems: "center",
-          flexGrow: 1,
-        }}
-      >
-        {/* Profile DP */}
-        <Image
-          source={
-            userData.dpImage
-              ? { uri: userData.dpImage }
-              : require("../../../images/chdummyimg.png")
-          }
-          style={{
-            width: 130,
-            height: 130,
-            borderRadius: 65,
-            borderWidth: 2.5,
-            borderColor: "#006644",
-            marginBottom: 15,
-          }}
-        />
-
-        {/* Name */}
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "bold",
-            color: "#006644",
-            marginBottom: 6,
-          }}
-        >
-          {userData.name || "N/A"}
-        </Text>
-
-        {/* Phone */}
-        <Text style={{ fontSize: 15, color: "#444", marginBottom: 18 }}>
-          📞 Phone: {userData.phoneNumber || "N/A"}
-        </Text>
-
-        {/*  Block Button */}
-        <TouchableOpacity
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: "#cc0000",
-            paddingVertical: 15,
-            paddingHorizontal: 22,
-            borderRadius: 14,
-            marginBottom: 18,
-            width: "90%",
-            elevation: 4,
-          }}
-          onPress={() => setBlockModalVisible(true)}
-        >
-          <Ionicons
-            name="close-circle"
-            size={22}
-            color="#fff"
-            style={{ marginRight: 10 }}
-          />
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-            Block User
-          </Text>
-        </TouchableOpacity>
-
-        {/*  Report Button */}
-        <TouchableOpacity
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: "#ff9900",
-            paddingVertical: 15,
-            paddingHorizontal: 22,
-            borderRadius: 14,
-            width: "90%",
-            elevation: 4,
-          }}
-          onPress={handleReportUser}
-        >
-          <Ionicons
-            name="alert-circle"
-            size={22}
-            color="#fff"
-            style={{ marginRight: 10 }}
-          />
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-            Report User
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* 🔹 Block Modal */}
-      <Modal
-        transparent
-        animationType="fade"
-        visible={blockModalVisible}
-        onRequestClose={() => setBlockModalVisible(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#e9e9e1",
-              padding: 20,
-              borderRadius: 14,
-              width: "85%",
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                marginBottom: 15,
-                color: "#333",
-                textAlign: "center",
-              }}
-            >
-              Are you sure you want to block this user?
-            </Text>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                width: "100%",
-              }}
-            >
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#006644",
-                  paddingVertical: 12,
-                  paddingHorizontal: 18,
-                  borderRadius: 10,
-                  flex: 1,
-                  marginRight: 8,
-                }}
-                onPress={() => setBlockModalVisible(false)}
-              >
-                <Ionicons
-                  name="close"
-                  size={20}
-                  color="#fff"
-                  style={{ marginRight: 6 }}
+                <Image
+                    source={
+                        userData.dpImage
+                            ? { uri: userData.dpImage }
+                            : require("../../../images/chdummyimg.png")
+                    }
+                    style={styles.headerAvatar}
                 />
-                <Text style={{ color: "#fff", fontSize: 15, fontWeight: "600" }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
 
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#cc0000",
-                  paddingVertical: 12,
-                  paddingHorizontal: 18,
-                  borderRadius: 10,
-                  flex: 1,
-                  marginLeft: 8,
-                }}
-                onPress={handleBlockUser}
-              >
-                <Ionicons
-                  name="close-circle"
-                  size={20}
-                  color="#fff"
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={{ color: "#fff", fontSize: 15, fontWeight: "600" }}>
-                  Block
+                <Text style={styles.headerTitle}>
+                    {userData.name || "Unknown User"}
                 </Text>
-              </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
-  );
+
+            {/* Scrollable Info */}
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                {/* Profile DP */}
+                <Image
+                    source={
+                        userData.dpImage
+                            ? { uri: userData.dpImage }
+                            : require("../../../images/chdummyimg.png")
+                    }
+                    style={styles.profileAvatar}
+                />
+
+                {/* Name */}
+                <Text style={styles.profileName}>
+                    {userData.name || "N/A"}
+                </Text>
+
+                {/* Phone */}
+                <Text style={styles.profilePhone}>
+                    📞 Phone: {userData.phoneNumber || "N/A"}
+                </Text>
+
+                {/* 🔹 Report Button (Only button kept) */}
+                <TouchableOpacity
+                    style={styles.reportButton}
+                    onPress={handleReportUser}
+                >
+                    <Ionicons
+                        name="alert-circle"
+                        size={22}
+                        color="#fff"
+                        style={{ marginRight: 10 }}
+                    />
+                    <Text style={styles.reportButtonText}>
+                        Report User
+                    </Text>
+                </TouchableOpacity>
+
+                {/* The Block User Modal and logic have been entirely removed */}
+
+            </ScrollView>
+        </SafeAreaView>
+    );
 }
+
+// ---
+// Stylesheet
+// ---
+const styles = StyleSheet.create({
+    container: { 
+        flex: 1, 
+        backgroundColor: "#fff" 
+    },
+    loadingContainer: {
+        flex: 1, 
+        justifyContent: "center", 
+        alignItems: "center" 
+    },
+    notFoundText: { 
+        fontSize: 16, 
+        color: "#666" 
+    },
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        backgroundColor: "#006644",
+        elevation: 5,
+    },
+    backButton: { 
+        marginRight: 12 
+    },
+    headerAvatar: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        marginRight: 12,
+        borderWidth: 1,
+        borderColor: "#fff",
+    },
+    headerTitle: {
+        color: "#fff",
+        fontSize: 19,
+        fontWeight: "bold",
+        flexShrink: 1,
+    },
+    scrollContent: {
+        padding: 20,
+        alignItems: "center",
+        flexGrow: 1,
+    },
+    profileAvatar: {
+        width: 130,
+        height: 130,
+        borderRadius: 65,
+        borderWidth: 2.5,
+        borderColor: "#006644",
+        marginBottom: 15,
+    },
+    profileName: {
+        fontSize: 22,
+        fontWeight: "bold",
+        color: "#006644",
+        marginBottom: 6,
+    },
+    profilePhone: { 
+        fontSize: 15, 
+        color: "#444", 
+        marginBottom: 30, // Increased margin for spacing
+    },
+    reportButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ff9900", // Orange for Report
+        paddingVertical: 15,
+        paddingHorizontal: 22,
+        borderRadius: 14,
+        width: "90%",
+        elevation: 4,
+    },
+    reportButtonText: { 
+        color: "#fff", 
+        fontSize: 16, 
+        fontWeight: "600" 
+    },
+});

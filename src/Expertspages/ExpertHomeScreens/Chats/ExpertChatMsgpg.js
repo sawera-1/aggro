@@ -10,7 +10,6 @@ import {
   Image,
   StyleSheet,
   Platform,
-  PermissionsAndroid,
   Linking,
   Modal,
   FlatList,
@@ -21,7 +20,7 @@ import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Contacts from 'react-native-contacts';
 import { launchImageLibrary } from 'react-native-image-picker';
-import Geolocation from 'react-native-geolocation-service';
+import LocationPiker from './LocationPikerpg';
 export default function ExpertChatScreen({ route, navigation }) {
   const { current_user, second_user, secondUserName, secondUserPic } = route.params;
 
@@ -43,7 +42,6 @@ export default function ExpertChatScreen({ route, navigation }) {
 
   const CLOUDINARY_CLOUD_NAME = 'dumgs9cp4';
   const CLOUDINARY_UPLOAD_PRESET = 'react_native_uploads';
-  const GOOGLE_MAPS_API_KEY = 'AIzaSyChaMafk-5r9cAYmf0VBWUbBowuuaANh6I';
 
   // Removed parent-level search state and effects to prevent re-renders while typing in ContactsModal
 
@@ -69,136 +67,7 @@ export default function ExpertChatScreen({ route, navigation }) {
     fetchUserDetails();
   }, [second_user, secondUserPic]);
 
-  const sendLocationMessage = async (payload) => {
-    try {
-      await firestore().collection('chats').doc(chatId).collection('messages').add({
-        type: 'location',
-        latitude: payload.latitude,
-        longitude: payload.longitude,
-        locationUrl: `https://www.google.com/maps?q=${payload.latitude},${payload.longitude}`,
-        address: payload.address,
-        mapImageUrl: payload.mapImageUrl,
-        image: payload.mapImageUrl,
-        senderId: current_user,
-        receiverId: second_user,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        readBy: { [current_user]: firestore.FieldValue.serverTimestamp() },
-      });
-    } catch {}
-  };
-
-  const SendLocationButton = ({ onResult }) => {
-    const [loading, setLoading] = useState(false);
-    const [preview, setPreview] = useState(null);
-
-    const requestPermission = async () => {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } else {
-        const auth = await Geolocation.requestAuthorization?.('whenInUse');
-        return auth === 'granted' || auth === 'authorized';
-      }
-    };
-
-    const getAddress = async (lat, lng) => {
-      if (!GOOGLE_MAPS_API_KEY) {
-        return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-      }
-      try {
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`;
-        const res = await fetch(url);
-        const json = await res.json();
-        const formatted = json?.results?.[0]?.formatted_address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-        return formatted;
-      } catch {
-        return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-      }
-    };
-
-    const buildStaticMap = (lat, lng) => {
-      if (!GOOGLE_MAPS_API_KEY) return null;
-      const size = '600x300';
-      const zoom = 15;
-      const marker = `color:red|${lat},${lng}`;
-      return `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${size}&markers=${encodeURIComponent(marker)}&key=${GOOGLE_MAPS_API_KEY}`;
-    };
-
-    const handlePress = async () => {
-      try {
-        setLoading(true);
-        const ok = await requestPermission();
-        if (!ok) {
-          Alert.alert('Permission', 'Location permission is required.');
-          return;
-        }
-        await new Promise((resolve, reject) => {
-          Geolocation.getCurrentPosition(
-            async pos => {
-              try {
-                const { latitude, longitude } = pos.coords;
-                const address = await getAddress(latitude, longitude);
-                const mapImageUrl = buildStaticMap(latitude, longitude);
-                const payload = { latitude, longitude, address, mapImageUrl };
-                console.log('SendLocationButton payload:', payload);
-                setPreview(payload);
-              } catch (e) {
-                Alert.alert('Error', 'Failed to resolve address.');
-              } finally {
-                resolve();
-              }
-            },
-            () => {
-              Alert.alert('Error', 'Failed to get location.');
-              resolve();
-            },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-          );
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <>
-        <TouchableOpacity onPress={handlePress} style={{ paddingHorizontal: 8, paddingVertical: 2 }} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#075E54" />
-          ) : (
-            <Text style={{ color: '#075E54', fontWeight: '700' }}> Send Location</Text>
-          )}
-        </TouchableOpacity>
-        <Modal visible={!!preview} animationType="slide" transparent>
-          <View style={styles.modalBackdrop}>
-            <View style={styles.plusModalContainer}>
-              {preview?.mapImageUrl ? (
-                <Image source={{ uri: preview.mapImageUrl }} style={{ width: 280, height: 140, borderRadius: 8, marginBottom: 10 }} />
-              ) : null}
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#222', textAlign: 'center' }}>{preview?.address}</Text>
-              <View style={{ flexDirection: 'row', marginTop: 12 }}>
-                <TouchableOpacity
-                  onPress={() => setPreview(null)}
-                  style={[styles.modalCancelBtn, { marginRight: 10 }]}>
-                  <Text style={{ color: '#075E54', fontWeight: '600' }}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={async () => {
-                    const p = preview;
-                    setPreview(null);
-                    onResult?.(p);
-                  }}
-                  style={styles.modalSendBtn}
-                >
-                  <Text style={{ color: '#fff', fontWeight: '700' }}>Send</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      </>
-    );
-  };
+  
 
   // Realtime messages listener
   useEffect(() => {
@@ -228,9 +97,6 @@ export default function ExpertChatScreen({ route, navigation }) {
             fileName: data.fileName,
             contactName: data.contactName,
             contactPhone: data.contactPhone,
-            latitude: data.latitude,
-            longitude: data.longitude,
-            locationUrl: data.locationUrl,
             audioUrl: data.audioUrl,
             durationMs: data.durationMs,
           };
@@ -371,9 +237,7 @@ export default function ExpertChatScreen({ route, navigation }) {
   };
 
   // Document picker logic (mocked)
-  const handlePickDocument = async () => {
-    Alert.alert("Document", "Document picker not implemented in this snippet (see react-native-document-picker).");
-  };
+ 
 
   // Contact logic
   const handleShareContact = async () => {
@@ -427,40 +291,7 @@ export default function ExpertChatScreen({ route, navigation }) {
     }
   };
 
-  // Location logic
-  const handleShareLocation = async () => {
-    try {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) return Alert.alert('Permission', 'Location permission is required.');
-      }
-
-      Geolocation.getCurrentPosition(
-        async position => {
-          const { latitude, longitude } = position.coords;
-          const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-          await firestore().collection('chats').doc(chatId).collection('messages').add({
-            type: 'location',
-            latitude,
-            longitude,
-            locationUrl: mapUrl,
-            senderId: current_user,
-            receiverId: second_user,
-            createdAt: firestore.FieldValue.serverTimestamp(),
-            readBy: { [current_user]: firestore.FieldValue.serverTimestamp() },
-          });
-          setModalVisible(false);
-        },
-        () => {
-          Alert.alert('Error', 'Failed to get location.');
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-      );
-    } catch {
-      Alert.alert('Error', 'Failed to share location.');
-    }
-  };
-
+  
   // Full-screen image modal
   const FullImageModal = () => (
     <Modal visible={!!fullImageUri} animationType="fade" transparent={false}>
@@ -503,11 +334,8 @@ export default function ExpertChatScreen({ route, navigation }) {
               <Icon name="person-add-outline" size={28} color="#075E54" />
               <Text style={styles.plusOptionText}>Contact</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.plusOptionBtn} onPress={handlePickDocument}>
-              <Icon name="document-outline" size={28} color="#075E54" />
-              <Text style={styles.plusOptionText}>Document</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.plusOptionBtn} onPress={handleShareLocation}>
+            
+            <TouchableOpacity style={styles.plusOptionBtn} onPress={LocationPiker}>
               <Icon name="location-outline" size={28} color="#075E54" />
               <Text style={styles.plusOptionText}>Location</Text>
             </TouchableOpacity>
@@ -702,7 +530,6 @@ export default function ExpertChatScreen({ route, navigation }) {
             <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.plusIconBtn}>
               <Icon name="add-circle" size={36} color="#075E54" />
             </TouchableOpacity>
-            <SendLocationButton onResult={async (payload) => { console.log('Location object:', payload); await sendLocationMessage(payload); }} />
           </View>
         )}
         renderSend={(props) => (

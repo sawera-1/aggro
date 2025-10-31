@@ -45,6 +45,25 @@ export default function ChatScreen({ route, navigation }) {
     ? `${current_user}_${second_user}`
     : `${second_user}_${current_user}`;
 
+  // Ensure parent chat document exists (needed for chat list subscriptions)
+  const ensureChatDoc = useCallback(async () => {
+    try {
+      const chatRef = firestore().collection('chats').doc(chatId);
+      const chatDoc = await chatRef.get();
+      if (!chatDoc.exists) {
+        await chatRef.set({
+          participants: [current_user, second_user],
+          createdAt: firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    } catch {}
+  }, [chatId, current_user, second_user]);
+
+  // Create chat doc on mount to ensure it appears in chat list
+  useEffect(() => {
+    ensureChatDoc();
+  }, [ensureChatDoc]);
+
   // Fetch receiver details
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -248,17 +267,8 @@ export default function ChatScreen({ route, navigation }) {
     setMessages(prev => GiftedChat.append(prev, [newMessage]));
 
     try {
-      const chatRef = firestore().collection('chats').doc(chatId);
-      const chatDoc = await chatRef.get();
-
-      if (!chatDoc.exists) {
-        await chatRef.set({
-          participants: [current_user, second_user],
-          createdAt: firestore.FieldValue.serverTimestamp(),
-        });
-      }
-
-      await chatRef.collection('messages').add({
+      await ensureChatDoc();
+      await firestore().collection('chats').doc(chatId).collection('messages').add({
         text: newMessage.text,
         senderId: current_user,
         receiverId: second_user,
@@ -268,7 +278,7 @@ export default function ChatScreen({ route, navigation }) {
     } catch {
       Alert.alert('Error', 'Failed to send message.');
     }
-  }, [current_user, second_user, chatId, dpImage]);
+  }, [current_user, second_user, chatId, dpImage, ensureChatDoc]);
 
   // Cloudinary upload
   const uploadToCloudinary = async (uri, filename, mimeType, resourceType = 'auto') => {
@@ -304,6 +314,7 @@ export default function ChatScreen({ route, navigation }) {
     setIsUploadingImage(true);
 
     try {
+      await ensureChatDoc();
       for (const asset of selectedImages) {
         const url = await uploadToCloudinary(asset.uri, asset.fileName || `image_${Date.now()}.jpg`, asset.type || 'image/jpeg');
         const messageId = `${Date.now()}_${current_user}`;
@@ -336,10 +347,7 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
-  // Document picker logic (mocked)
-  const handlePickDocument = async () => {
-    Alert.alert("Document", "Document picker not implemented in this snippet (see react-native-document-picker).");
-  };
+  
 
   // Contact logic
   const handleShareContact = async () => {
@@ -375,6 +383,7 @@ export default function ChatScreen({ route, navigation }) {
 
   const handleSendContact = async (contact) => {
     try {
+      await ensureChatDoc();
       const name = contact.displayName || `${contact.givenName || ''} ${contact.familyName || ''}`.trim();
       const phone = contact.phoneNumbers?.[0]?.number || '';
       if (!phone && !name) return Alert.alert('Contacts', 'Selected contact has no name or phone.');
@@ -403,6 +412,7 @@ export default function ChatScreen({ route, navigation }) {
 
       Geolocation.getCurrentPosition(
         async position => {
+          await ensureChatDoc();
           const { latitude, longitude } = position.coords;
           const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
           await firestore().collection('chats').doc(chatId).collection('messages').add({
@@ -468,10 +478,6 @@ export default function ChatScreen({ route, navigation }) {
             <TouchableOpacity style={styles.plusOptionBtn} onPress={handleShareContact}>
               <Icon name="person-add-outline" size={28} color="#075E54" />
               <Text style={styles.plusOptionText}>Contact</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.plusOptionBtn} onPress={handlePickDocument}>
-              <Icon name="document-outline" size={28} color="#075E54" />
-              <Text style={styles.plusOptionText}>Document</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.plusOptionBtn} onPress={handleShareLocation}>
               <Icon name="location-outline" size={28} color="#075E54" />

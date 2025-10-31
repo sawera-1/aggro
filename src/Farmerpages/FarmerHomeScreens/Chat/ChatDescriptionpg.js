@@ -23,7 +23,7 @@ export default function ChatDescription() {
 
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [blockModalVisible, setBlockModalVisible] = useState(false);
+
 
   //  Fetch user info
   useEffect(() => {
@@ -47,26 +47,7 @@ export default function ChatDescription() {
     return () => unsubscribe();
   }, [userId]);
 
-  //  Block user
-  const handleBlockUser = async () => {
-    if (!currentUserId || !userId) return;
-    try {
-      await firestore()
-        .collection('blockedUsers')
-        .doc(currentUserId)
-        .collection('list')
-        .doc(userId)
-        .set({
-          blockedUserId: userId,
-          blockedAt: firestore.FieldValue.serverTimestamp(),
-        });
-      Alert.alert('User Blocked', 'You have successfully blocked this user.');
-      setBlockModalVisible(false);
-    } catch (error) {
-      console.error('Error blocking user:', error);
-      Alert.alert('Error', 'Failed to block user. Please try again.');
-    }
-  };
+ 
 
   //  Navigate to report page
   const handleReportUser = () => {
@@ -191,25 +172,7 @@ export default function ChatDescription() {
           ⏱️ {userData.experience || '0'} years experience
         </Text>
 
-        {/* Block Button */}
-        <TouchableOpacity
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#cc0000',
-            paddingVertical: 15,
-            paddingHorizontal: 22,
-            borderRadius: 14,
-            marginBottom: 18,
-            width: '90%',
-            elevation: 4,
-          }}
-          onPress={() => setBlockModalVisible(true)}
-        >
-          <Ionicons name="close-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Block User</Text>
-        </TouchableOpacity>
-
+       
         {/* Report Button */}
         <TouchableOpacity
           style={{
@@ -229,86 +192,7 @@ export default function ChatDescription() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/*  Block Modal */}
-      <Modal
-        transparent
-        animationType="fade"
-        visible={blockModalVisible}
-        onRequestClose={() => setBlockModalVisible(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: '#e9e9e1',
-              padding: 20,
-              borderRadius: 14,
-              width: '85%',
-              alignItems: 'center',
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: '600',
-                marginBottom: 15,
-                color: '#333',
-                textAlign: 'center',
-              }}
-            >
-              Are you sure you want to block this user?
-            </Text>
-
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                width: '100%',
-              }}
-            >
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#006644',
-                  paddingVertical: 12,
-                  paddingHorizontal: 18,
-                  borderRadius: 10,
-                  flex: 1,
-                  marginRight: 8,
-                }}
-                onPress={() => setBlockModalVisible(false)}
-              >
-                <Ionicons name="close" size={20} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#cc0000',
-                  paddingVertical: 12,
-                  paddingHorizontal: 18,
-                  borderRadius: 10,
-                  flex: 1,
-                  marginLeft: 8,
-                }}
-                onPress={handleBlockUser}
-              >
-                <Ionicons name="close-circle" size={20} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Block</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      
     </SafeAreaView>
   );
 }
