@@ -25,7 +25,6 @@ const OwnChannelDescription = ({ navigation, route }) => {
 
   const [channelData, setChannelData] = useState(null);
   const [creatorData, setCreatorData] = useState(null);
-  const [membersCount, setMembersCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -63,20 +62,11 @@ const OwnChannelDescription = ({ navigation, route }) => {
         }
       );
 
-    const unsubscribeMembers = firestore()
-      .collection('channels')
-      .doc(channelId)
-      .collection('members')
-      .onSnapshot(
-        (snapshot) => setMembersCount(snapshot.size),
-        (error) => console.error('🔥 Members fetch error:', error)
-      );
-
     return () => {
       unsubscribeChannel();
-      unsubscribeMembers();
     };
   }, [channelId]);
+
 
   // Update channel info (editable for owner)
   const handleSaveChanges = async () => {
@@ -193,26 +183,12 @@ const OwnChannelDescription = ({ navigation, route }) => {
               style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 12, height: 100, textAlignVertical: 'top', fontSize: 16, marginBottom: 15 }}
             />
 
-            {/* Members Section */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
-                {t('ownchannelDes.totalMembers')}: {membersCount}
-              </Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('contactpg')}
-                style={{ backgroundColor: '#00aaff', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10 }}
-              >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                  {t('ownchannelDes.addMember')}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            
 
             {/* Created By Section */}
             <Text style={{ fontSize: 14, color: '#666', marginBottom: 14 }}>
               {t('ownchannelDes.createdBy')}: {creatorData?.name || channelData.createdBy || 'N/A'}
             </Text>
-            
 
             <TouchableOpacity
               style={{ backgroundColor: '#006644', padding: 14, borderRadius: 12, alignItems: 'center', elevation: 2 }}

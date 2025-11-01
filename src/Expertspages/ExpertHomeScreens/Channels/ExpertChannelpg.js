@@ -12,6 +12,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
@@ -41,27 +42,81 @@ const ExpertChannel = ({ navigation }) => {
           .where('createdBy', '==', user.uid)
           .get();
 
-        const ownCh = ownSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let ownCh = ownSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), unreadCount: 0 }));
+        if (ownCh.length > 0) {
+          const ownComputed = await Promise.all(ownCh.map(async ch => {
+            try {
+              const snap = await firestore()
+                .collection('channels').doc(ch.id).collection('messages')
+                .orderBy('createdAt', 'desc').limit(50).get();
+              const userId = user.uid;
+              const unread = snap.docs.reduce((acc, d) => {
+                const m = d.data() || {};
+                const readBy = m.readBy || {};
+                const isOwn = m.senderId === userId;
+                const isRead = !!readBy[userId];
+                return acc + (!isOwn && !isRead ? 1 : 0);
+              }, 0);
+              ch.unreadCount = unread;
+            } catch {}
+            return ch;
+          }));
+          ownCh = ownComputed;
+        }
         setOwnChannels(ownCh);
 
-        // --- Fetch Following Channels ---
+        // --- Fetch Following Channels + followedAt ---
         const followingSnap = await firestore()
           .collection('users')
           .doc(user.uid)
           .collection('followedChannels')
           .get();
 
-        const followingIds = followingSnap.docs.map(doc => doc.data().channelId);
+        const followingMeta = {};
+        followingSnap.docs.forEach(d => {
+          const data = d.data() || {};
+          const id = data.channelId || d.id;
+          const followedAt = data.followedAt?.toDate?.() || null;
+          if (id) followingMeta[id] = { followedAt };
+        });
+        const followingIds = Object.keys(followingMeta);
         let followingCh = [];
 
         if (followingIds.length > 0) {
-          const promises = followingIds.map(id =>
-            firestore().collection('channels').doc(id).get()
+          const results = await Promise.all(
+            followingIds.map(id => firestore().collection('channels').doc(id).get())
           );
-          const results = await Promise.all(promises);
           followingCh = results
             .map(doc => (doc.exists ? { id: doc.id, ...doc.data() } : null))
-            .filter(Boolean);
+            .filter(Boolean)
+            .map(ch => ({ ...ch, unreadCount: 0 }));
+
+          // Compute unread counts (best-effort on recent 50 messages)
+          const computePromises = followingCh.map(async ch => {
+            try {
+              const since = followingMeta[ch.id]?.followedAt;
+              const snap = await firestore()
+                .collection('channels')
+                .doc(ch.id)
+                .collection('messages')
+                .orderBy('createdAt', 'desc')
+                .limit(50)
+                .get();
+              const unread = snap.docs.reduce((acc, mdoc) => {
+                const m = mdoc.data() || {};
+                const createdAt = m.createdAt?.toDate?.() || null;
+                const isAfterFollow = since ? (!createdAt || createdAt >= since) : true;
+                const readBy = m.readBy || {};
+                const isOwn = m.senderId === user.uid;
+                const isRead = !!readBy[user.uid];
+                return acc + (isAfterFollow && !isOwn && !isRead ? 1 : 0);
+              }, 0);
+              ch.unreadCount = unread;
+            } catch {}
+            return ch;
+          });
+          const withUnread = await Promise.all(computePromises);
+          followingCh = withUnread;
         }
         setFollowingChannels(followingCh);
 
@@ -85,6 +140,87 @@ const ExpertChannel = ({ navigation }) => {
 
     fetchChannels();
   }, []);
+
+  // Refresh counts when screen gains focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const user = auth().currentUser;
+      if (!user) return;
+      // re-run the same fetch to update unread badges
+      (async () => {
+        try {
+          setLoading(true);
+          // Reload ownChannels unread
+          const ownSnap = await firestore()
+            .collection('channels').where('createdBy', '==', user.uid).get();
+          let ownCh = ownSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), unreadCount: 0 }));
+          if (ownCh.length) {
+            ownCh = await Promise.all(ownCh.map(async ch => {
+              try {
+                const snap = await firestore().collection('channels').doc(ch.id)
+                  .collection('messages').orderBy('createdAt', 'desc').limit(50).get();
+                const userId = user.uid;
+                const unread = snap.docs.reduce((acc, d) => {
+                  const m = d.data() || {};
+                  const readBy = m.readBy || {};
+                  const isOwn = m.senderId === userId;
+                  const isRead = !!readBy[userId];
+                  return acc + (!isOwn && !isRead ? 1 : 0);
+                }, 0);
+                ch.unreadCount = unread;
+              } catch {}
+              return ch;
+            }));
+          }
+          setOwnChannels(ownCh);
+
+          // Reload followingChannels unread
+          const followingSnap = await firestore()
+            .collection('users')
+            .doc(user.uid)
+            .collection('followedChannels')
+            .get();
+          const followingMeta = {};
+          followingSnap.docs.forEach(d => {
+            const data = d.data() || {};
+            const id = data.channelId || d.id;
+            const followedAt = data.followedAt?.toDate?.() || null;
+            if (id) followingMeta[id] = { followedAt };
+          });
+          const followingIds = Object.keys(followingMeta);
+          if (!followingIds.length) { setFollowingChannels([]); return; }
+          const results = await Promise.all(
+            followingIds.map(id => firestore().collection('channels').doc(id).get())
+          );
+          let followingCh = results
+            .map(doc => (doc.exists ? { id: doc.id, ...doc.data(), unreadCount: 0 } : null))
+            .filter(Boolean);
+          const compute = await Promise.all(followingCh.map(async ch => {
+            try {
+              const since = followingMeta[ch.id]?.followedAt;
+              const snap = await firestore()
+                .collection('channels').doc(ch.id).collection('messages')
+                .orderBy('createdAt', 'desc').limit(50).get();
+              const unread = snap.docs.reduce((acc, d) => {
+                const m = d.data() || {};
+                const createdAt = m.createdAt?.toDate?.() || null;
+                const isAfterFollow = since ? (!createdAt || createdAt >= since) : true;
+                const readBy = m.readBy || {};
+                const isOwn = m.senderId === user.uid;
+                const isRead = !!readBy[user.uid];
+                return acc + (isAfterFollow && !isOwn && !isRead ? 1 : 0);
+              }, 0);
+              ch.unreadCount = unread;
+            } catch {}
+            return ch;
+          }));
+          setFollowingChannels(compute);
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }, [])
+  );
 
   const filterChannels = channels =>
     channels.filter(
@@ -142,6 +278,11 @@ const ExpertChannel = ({ navigation }) => {
               </Text>
               <Text style={{ fontSize: 12, color: '#555' }}>{channel.description}</Text>
             </View>
+            {!!channel.unreadCount && channel.unreadCount > 0 && (
+              <View style={{ backgroundColor: '#006644', borderRadius: 12, paddingVertical: 2, paddingHorizontal: 8 }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>{channel.unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         ))
       )}

@@ -15,19 +15,24 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
-import { GiftedChat, Bubble, Send } from 'react-native-gifted-chat';
+import { GiftedChat, Bubble, Send, InputToolbar } from 'react-native-gifted-chat';
 import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Contacts from 'react-native-contacts';
 import { launchImageLibrary } from 'react-native-image-picker';
 import LocationPiker from './LocationPikerpg';
+import VoiceRecorderInput from './VoiceRecorderInput';
+import VoiceMessagePlayer from './VoiceMessagePlayer';
+
 export default function ExpertChatScreen({ route, navigation }) {
+
   const { current_user, second_user, secondUserName, secondUserPic } = route.params;
 
   const [messages, setMessages] = useState([]);
   const [secondUserPhone, setSecondUserPhone] = useState('Loading...');
   const [dpImage, setDpImage] = useState(secondUserPic);
-  const [isRecording, setIsRecording] = useState(false);
+  // State to toggle between text input and custom voice input
+  const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
@@ -36,10 +41,6 @@ export default function ExpertChatScreen({ route, navigation }) {
   const [contactsModalVisible, setContactsModalVisible] = useState(false);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [contacts, setContacts] = useState([]);
-  const [numberModalVisible, setNumberModalVisible] = useState(false);
-  const [contactForNumbers, setContactForNumbers] = useState(null);
-  const [selectedNumber, setSelectedNumber] = useState(null);
-
   const CLOUDINARY_CLOUD_NAME = 'dumgs9cp4';
   const CLOUDINARY_UPLOAD_PRESET = 'react_native_uploads';
 
@@ -174,13 +175,28 @@ export default function ExpertChatScreen({ route, navigation }) {
   const uploadToCloudinary = async (uri, filename, mimeType, resourceType = 'auto') => {
     const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
     const data = new FormData();
-    data.append('file', { uri, name: filename || `upload_${Date.now()}`, type: mimeType || 'application/octet-stream' });
+    const normalizedUri = uri && uri.startsWith('file://') ? uri : (uri ? `file://${uri}` : uri);
+    data.append('file', { uri: normalizedUri, name: filename || `upload_${Date.now()}`, type: mimeType || 'application/octet-stream' });
     data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
     const res = await fetch(endpoint, { method: 'POST', body: data });
     const json = await res.json();
     if (!res.ok || !json.secure_url) throw new Error(json.error?.message || `Cloudinary upload failed (${res.status})`);
     return json.secure_url;
+  };
+
+  // Audio-specific upload returning metadata
+  const uploadAudioToCloudinary = async (uri, filename, mimeType) => {
+    const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+    const data = new FormData();
+    const normalizedUri = uri && uri.startsWith('file://') ? uri : (uri ? `file://${uri}` : uri);
+    data.append('file', { uri: normalizedUri, name: filename || `upload_${Date.now()}`, type: mimeType || 'application/octet-stream' });
+    data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+    const res = await fetch(endpoint, { method: 'POST', body: data });
+    const json = await res.json();
+    if (!res.ok || !json.secure_url) throw new Error(json.error?.message || `Cloudinary upload failed (${res.status})`);
+    return { url: json.secure_url, duration: json.duration };
   };
 
   // Modal: Pick multiple images, then send on send btn
@@ -483,6 +499,195 @@ export default function ExpertChatScreen({ route, navigation }) {
     );
   });
 
+  const handleSendVoice = async (filePath, durationSeconds) => {
+    if (!filePath) return Alert.alert('Error', 'Voice file path is missing.');
+
+    const audioDurationMs = Math.round((durationSeconds || 0) * 1000);
+    const filename = `voice_${current_user}_${Date.now()}.mp4`;
+    const mimeType = Platform.OS === 'ios' ? 'audio/aac' : 'audio/mp4';
+
+    const messageId = `${Date.now()}_${current_user}`;
+    const optimistic = {
+      _id: messageId,
+      text: 'Sending Voice Message...',
+      createdAt: new Date(),
+      user: { _id: current_user, name: 'You', avatar: dpImage },
+      type: 'voice',
+      audioUrl: 'placeholder',
+      durationMs: audioDurationMs,
+    };
+    setMessages(prev => GiftedChat.append(prev, [optimistic]));
+
+    try {
+      const uploadResult = await uploadAudioToCloudinary(filePath, filename, mimeType);
+      const audioUrl = uploadResult.url;
+
+      const msgData = {
+        type: 'voice',
+        audioUrl,
+        durationMs: audioDurationMs,
+        senderId: current_user,
+        receiverId: second_user,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        readBy: { [current_user]: firestore.FieldValue.serverTimestamp() },
+      };
+
+      const chatRef = firestore().collection('chats').doc(chatId);
+      const chatDoc = await chatRef.get();
+      if (!chatDoc.exists) {
+        await chatRef.set({
+          participants: [current_user, second_user],
+          createdAt: firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      await chatRef.collection('messages').doc(messageId).set(msgData);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send voice message.');
+      setMessages(prev => prev.filter(m => m._id !== messageId));
+    }
+  };
+
+  const renderInputToolbar = (props) => {
+    if (isRecordingMode) {
+      return (
+        <View style={styles.customInputToolbar}>
+          <VoiceRecorderInput
+            onSendVoice={handleSendVoice}
+            onToggleRecording={setIsRecordingMode}
+            isRecordingMode={isRecordingMode}
+          />
+        </View>
+      );
+    }
+
+    return (
+      <InputToolbar
+        {...props}
+        renderActions={() => (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.plusIconBtn}>
+              <Icon name="add-circle" size={36} color="#075E54" />
+            </TouchableOpacity>
+          </View>
+        )}
+        renderSend={(sendProps) => (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => setIsRecordingMode(true)} style={{ paddingHorizontal: 8, marginRight: 4 }}>
+              <Icon name="mic-outline" size={24} color="#075E54" />
+            </TouchableOpacity>
+            <Send {...sendProps}>
+              <View style={{ marginRight: 8, marginBottom: 5 }}>
+                <Icon name="send" size={22} color="#075E54" />
+              </View>
+            </Send>
+          </View>
+        )}
+      />
+    );
+  };
+
+  const renderBubble = (props) => {
+    const { currentMessage } = props;
+    const isCurrentUser = currentMessage.user._id === current_user;
+
+    if (currentMessage.type === 'voice' && currentMessage.audioUrl) {
+      return (
+        <View style={[styles.bubbleWrapper, { alignSelf: isCurrentUser ? 'flex-end' : 'flex-start' }]}>
+          <VoiceMessagePlayer
+            isCurrentUser={isCurrentUser}
+            audioUrl={currentMessage.audioUrl}
+            durationMs={currentMessage.durationMs}
+            isRead={currentMessage.isRead}
+            isDelivered={currentMessage.isDelivered}
+            createdAt={currentMessage.createdAt}
+          />
+        </View>
+      );
+    }
+
+    if (currentMessage.type === 'voice' && currentMessage.audioUrl === 'placeholder') {
+      return (
+        <View style={[styles.bubbleWrapper, { alignSelf: 'flex-end', maxWidth: '75%', paddingVertical: 10, paddingHorizontal: 12 }]}>
+          <View style={[styles.rightBubble, styles.voiceBubbleBase, { backgroundColor: '#dcecd4', flexDirection: 'row', alignItems: 'center' }]}>
+            <ActivityIndicator size="small" color="#075E54" style={{ marginRight: 8 }} />
+            <Text style={{ color: '#075E54' }}>Uploading voice message...</Text>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={[styles.bubbleWrapper, { alignSelf: isCurrentUser ? 'flex-end' : 'flex-start' }]}>
+        {currentMessage.text && currentMessage.type !== 'voice' && (
+          <Bubble
+            {...props}
+            wrapperStyle={{ right: styles.rightBubble, left: styles.leftBubble }}
+            textStyle={{ right: styles.rightText, left: styles.leftText }}
+            renderTime={() => null}
+          />
+        )}
+        {(currentMessage.image || currentMessage.imageUrl) && (
+          <TouchableOpacity
+            activeOpacity={0.95}
+            onPress={() => setFullImageUri(currentMessage.image || currentMessage.imageUrl)}
+          >
+            <Image
+              source={{ uri: currentMessage.image || currentMessage.imageUrl }}
+              style={{
+                width: 220,
+                height: 220,
+                borderRadius: 8,
+                marginTop: 4,
+                alignSelf: isCurrentUser ? 'flex-end' : 'flex-start',
+              }}
+            />
+          </TouchableOpacity>
+        )}
+        {currentMessage.type === 'contact' && (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => {
+              if (currentMessage.contactPhone) {
+                Linking.openURL(`tel:${currentMessage.contactPhone}`);
+              }
+            }}
+            style={[isCurrentUser ? styles.rightBubble : styles.leftBubble, styles.contactBubble]}
+          >
+            <View style={styles.contactInlineRow}>
+              <View style={styles.contactInlineIcon}>
+                <Icon name="person" size={18} color="#075E54" />
+              </View>
+              <Text style={styles.contactInlineName} numberOfLines={1}>
+                {currentMessage.contactName || 'Contact'}
+              </Text>
+            </View>
+            {!!currentMessage.contactPhone && (
+              <>
+                <View style={styles.contactDivider} />
+                <Text style={styles.contactInlinePhone}>{currentMessage.contactPhone}</Text>
+              </>
+            )}
+            <View style={styles.timeTickContainer}>
+              <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+              {isCurrentUser && (
+                <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>
+                  {currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
+        )}
+        {currentMessage.type !== 'contact' && currentMessage.type !== 'voice' && (
+          <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
+            <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+            {isCurrentUser && <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>{currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}</Text>}
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#ECE5DD' }}>
       <FullImageModal />
@@ -523,103 +728,16 @@ export default function ExpertChatScreen({ route, navigation }) {
         onSend={onSend}
         user={{ _id: current_user }}
         showAvatarForEveryMessage
-        alwaysShowSend
+        alwaysShowSend={!isRecordingMode}
         scrollToBottom
-        renderActions={() => (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.plusIconBtn}>
-              <Icon name="add-circle" size={36} color="#075E54" />
-            </TouchableOpacity>
-          </View>
+        renderInputToolbar={renderInputToolbar}
+        renderBubble={renderBubble}
+        renderActions={() => isRecordingMode ? null : (
+          <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.plusIconBtn}>
+            <Icon name="add-circle" size={36} color="#075E54" />
+          </TouchableOpacity>
         )}
-        renderSend={(props) => (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity
-              onLongPress={() => Alert.alert('Unavailable', 'Voice recording is temporarily disabled.')}
-              style={{ paddingHorizontal: 8 }}
-            >
-              <Icon name={isRecording ? 'mic' : 'mic-outline'} size={24} color={isRecording ? '#d00' : '#075E54'} />
-            </TouchableOpacity>
-            <Send {...props}>
-              <View style={{ marginRight: 8, marginBottom: 5 }}>
-                <Icon name="send" size={22} color="#075E54" />
-              </View>
-            </Send>
-          </View>
-        )}
-        renderBubble={(props) => {
-          const { currentMessage } = props;
-          const isCurrentUser = currentMessage.user._id === current_user;
-          return (
-            <View style={[styles.bubbleWrapper, { alignSelf: isCurrentUser ? 'flex-end' : 'flex-start' }]}>
-              {currentMessage.text && (
-                <Bubble
-                  {...props}
-                  wrapperStyle={{ right: styles.rightBubble, left: styles.leftBubble }}
-                  textStyle={{ right: styles.rightText, left: styles.leftText }}
-                  renderTime={() => null}
-                />
-              )}
-              {(currentMessage.image || currentMessage.imageUrl) && (
-                <TouchableOpacity
-                  activeOpacity={0.95}
-                  onPress={() => setFullImageUri(currentMessage.image || currentMessage.imageUrl)}
-                >
-                  <Image
-                    source={{ uri: currentMessage.image || currentMessage.imageUrl }}
-                    style={{
-                      width: 220,
-                      height: 220,
-                      borderRadius: 8,
-                      marginTop: 4,
-                      alignSelf: isCurrentUser ? 'flex-end' : 'flex-start',
-                    }}
-                  />
-                </TouchableOpacity>
-              )}
-              {currentMessage.type === 'contact' && (
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => {
-                    if (currentMessage.contactPhone) {
-                      Linking.openURL(`tel:${currentMessage.contactPhone}`);
-                    }
-                  }}
-                  style={[isCurrentUser ? styles.rightBubble : styles.leftBubble, styles.contactBubble]}
-                >
-                  <View style={styles.contactInlineRow}>
-                    <View style={styles.contactInlineIcon}>
-                      <Icon name="person" size={18} color="#075E54" />
-                    </View>
-                    <Text style={styles.contactInlineName} numberOfLines={1}>
-                      {currentMessage.contactName || 'Contact'}
-                    </Text>
-                  </View>
-                  {!!currentMessage.contactPhone && (
-                    <>
-                      <View style={styles.contactDivider} />
-                      <Text style={styles.contactInlinePhone}>{currentMessage.contactPhone}</Text>
-                    </>
-                  )}
-                  <View style={styles.timeTickContainer}>
-                    <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                    {isCurrentUser && (
-                      <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>
-                        {currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}
-                      </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              )}
-              {currentMessage.type !== 'contact' && (
-                <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
-                  <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                  {isCurrentUser && <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>{currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}</Text>}
-                </View>
-              )}
-            </View>
-          );
-        }}
+        renderSend={() => null}
       />
     </SafeAreaView>
   );
@@ -684,4 +802,49 @@ const styles = StyleSheet.create({
   primaryBtnDisabled: { backgroundColor: '#b7d7cd' },
   primaryBtnText: { color: '#fff', fontWeight: '700' },
   miniSendBtnGreen: { backgroundColor: '#006644', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 },
+  customInputToolbar: {
+    paddingVertical: Platform.OS === 'ios' ? 10 : 0,
+    borderTopWidth: 1,
+    borderTopColor: '#e8e8e8',
+    backgroundColor: '#fff',
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  voiceBubbleBase: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    maxWidth: '80%',
+    minWidth: 180,
+    marginBottom: 6,
+  },
+  senderVoiceBubble: {
+    backgroundColor: '#DCF8C6',
+    borderTopRightRadius: 2,
+    marginRight: 8,
+    paddingRight: 45,
+  },
+  receiverVoiceBubble: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 2,
+    marginLeft: 8,
+  },
+  voiceDurationText: {
+    fontSize: 12,
+    color: '#888',
+    marginLeft: 10,
+  },
+  voiceProgressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#ccc',
+    marginHorizontal: 10,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  voiceProgress: {
+    height: '100%',
+    backgroundColor: '#075E54',
+  },
 });

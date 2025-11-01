@@ -15,12 +15,14 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
-import { GiftedChat, Bubble, Send } from 'react-native-gifted-chat';
+import { GiftedChat, Bubble, Send, InputToolbar } from 'react-native-gifted-chat';
 import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Contacts from 'react-native-contacts';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Geolocation from 'react-native-geolocation-service';
+import VoiceRecorderInput from '../../../Expertspages/ExpertHomeScreens/Chats/VoiceRecorderInput';
+import VoiceMessagePlayer from '../../../Expertspages/ExpertHomeScreens/Chats/VoiceMessagePlayer';
 
 export default function ChatScreen({ route, navigation }) {
   const { current_user, second_user, secondUserName, secondUserPic } = route.params;
@@ -29,6 +31,7 @@ export default function ChatScreen({ route, navigation }) {
   const [secondUserPhone, setSecondUserPhone] = useState('Loading...');
   const [dpImage, setDpImage] = useState(secondUserPic);
   const [isRecording, setIsRecording] = useState(false);
+  const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
@@ -80,6 +83,65 @@ export default function ChatScreen({ route, navigation }) {
     };
     fetchUserDetails();
   }, [second_user, secondUserPic]);
+
+  // Voice: send recorded audio
+  const handleSendVoice = useCallback(async (filePath, durationSeconds) => {
+    if (!filePath) return;
+    const durationMs = Math.max(1000, Math.round(durationSeconds * 1000));
+    const messageId = `${Date.now()}_${current_user}`;
+
+    const optimistic = {
+      _id: messageId,
+      text: '',
+      createdAt: new Date(),
+      user: { _id: current_user, name: 'You', avatar: dpImage },
+      type: 'voice',
+      audioUrl: null,
+      durationMs,
+      isUploading: true,
+    };
+    setMessages(prev => GiftedChat.append(prev, [optimistic]));
+
+    try {
+      await ensureChatDoc();
+      const url = await uploadToCloudinary(
+        filePath.startsWith('file://') ? filePath : `file://${filePath}`,
+        `voice_${Date.now()}.m4a`,
+        'audio/m4a',
+        'video'
+      );
+
+      await firestore().collection('chats').doc(chatId).collection('messages').doc(messageId).set({
+        type: 'voice',
+        audioUrl: url,
+        durationMs,
+        senderId: current_user,
+        receiverId: second_user,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        readBy: { [current_user]: firestore.FieldValue.serverTimestamp() },
+      });
+
+      setMessages(prev => prev.map(m => (m._id === messageId ? { ...m, audioUrl: url, isUploading: false } : m)));
+    } catch {
+      setMessages(prev => prev.filter(m => m._id !== messageId));
+      Alert.alert('Error', 'Failed to send voice message.');
+    }
+  }, [current_user, second_user, chatId, dpImage, ensureChatDoc]);
+
+  const renderInputToolbar = useCallback((props) => {
+    if (isRecordingMode) {
+      return (
+        <View style={styles.customInputToolbar}>
+          <VoiceRecorderInput
+            isRecordingMode={isRecordingMode}
+            onToggleRecording={setIsRecordingMode}
+            onSendVoice={handleSendVoice}
+          />
+        </View>
+      );
+    }
+    return <InputToolbar {...props} />;
+  }, [isRecordingMode, handleSendVoice]);
 
   // Realtime messages listener
   useEffect(() => {
@@ -569,7 +631,7 @@ export default function ChatScreen({ route, navigation }) {
         renderSend={(props) => (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity
-              onLongPress={() => Alert.alert('Unavailable', 'Voice recording is temporarily disabled.')}
+              onPress={() => setIsRecordingMode(true)}
               style={{ paddingHorizontal: 8 }}
             >
               <Icon name={isRecording ? 'mic' : 'mic-outline'} size={24} color={isRecording ? '#d00' : '#075E54'} />
@@ -581,6 +643,7 @@ export default function ChatScreen({ route, navigation }) {
             </Send>
           </View>
         )}
+        renderInputToolbar={renderInputToolbar}
         renderBubble={(props) => {
           const { currentMessage } = props;
           const isCurrentUser = currentMessage.user._id === current_user;
@@ -645,7 +708,26 @@ export default function ChatScreen({ route, navigation }) {
                   </View>
                 </TouchableOpacity>
               )}
-              {currentMessage.type !== 'contact' && (
+              {currentMessage.type === 'voice' && (
+                <View style={[isCurrentUser ? styles.rightBubble : styles.leftBubble, styles.voiceBubbleBase]}>
+                  {currentMessage.isUploading ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Icon name="mic" size={18} color="#999" />
+                      <Text style={{ marginLeft: 8, color: '#999' }}>Uploading voice…</Text>
+                    </View>
+                  ) : (
+                    <VoiceMessagePlayer
+                      isCurrentUser={isCurrentUser}
+                      audioUrl={currentMessage.audioUrl}
+                      durationMs={currentMessage.durationMs}
+                      isRead={currentMessage.isRead}
+                      isDelivered={currentMessage.isDelivered}
+                      createdAt={currentMessage.createdAt}
+                    />
+                  )}
+                </View>
+              )}
+              {currentMessage.type !== 'contact' && currentMessage.type !== 'voice' && (
                 <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
                   <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                   {isCurrentUser && <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>{currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}</Text>}
@@ -699,4 +781,22 @@ const styles = StyleSheet.create({
   contactInlineName: { fontSize: 15, fontWeight: '700', color: '#102a43' },
   contactInlinePhone: { fontSize: 13, color: '#4a5568', marginTop: 1 },
   contactBubble: { position: 'relative', paddingRight: 56, paddingTop: 4, paddingBottom: 4, marginTop: 4, marginBottom: 2 },
+  customInputToolbar: {
+    paddingVertical: Platform.OS === 'ios' ? 10 : 0,
+    borderTopWidth: 1,
+    borderTopColor: '#e8e8e8',
+    backgroundColor: '#fff',
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  voiceBubbleBase: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    maxWidth: '80%',
+    minWidth: 180,
+    marginTop: 4,
+    marginBottom: 2,
+  },
 });

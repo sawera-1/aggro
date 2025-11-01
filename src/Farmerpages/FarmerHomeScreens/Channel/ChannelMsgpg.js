@@ -22,6 +22,8 @@ import Icon from "react-native-vector-icons/Ionicons";
 import Contacts from "react-native-contacts";
 import { launchImageLibrary } from "react-native-image-picker";
 import Geolocation from "react-native-geolocation-service";
+import VoiceRecorderInput from '../../../Expertspages/ExpertHomeScreens/Chats/VoiceRecorderInput';
+import VoiceMessagePlayer from '../../../Expertspages/ExpertHomeScreens/Chats/VoiceMessagePlayer';
 
 const CLOUDINARY_CLOUD_NAME = 'dumgs9cp4';
 const CLOUDINARY_UPLOAD_PRESET = 'react_native_uploads';
@@ -39,6 +41,7 @@ export default function ChannelMsgScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [contactsModalVisible, setContactsModalVisible] = useState(false);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [contacts, setContacts] = useState([]);
@@ -72,6 +75,55 @@ export default function ChannelMsgScreen({ route, navigation }) {
     fetchFollowedAt();
   }, [channelId, currentUser]);
 
+  // Upload audio to Cloudinary (use 'video' resource type for audio files)
+  const uploadAudioToCloudinary = async (uri, filename = `voice_${Date.now()}.m4a`, mimeType = 'audio/m4a') => {
+    const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+    const data = new FormData();
+    data.append('file', { uri: uri.startsWith('file://') ? uri : `file://${uri}`, name: filename, type: mimeType });
+    data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    const res = await fetch(endpoint, { method: 'POST', body: data });
+    const json = await res.json();
+    if (!json.secure_url) throw new Error(json.error?.message || 'Audio upload failed');
+    return json.secure_url;
+  };
+
+  // Send recorded voice message
+  const handleSendVoice = useCallback(async (filePath, durationSeconds) => {
+    if (!filePath || !currentUser) return;
+    const durationMs = Math.max(1000, Math.round(durationSeconds * 1000));
+    const messageId = `${Date.now()}_${currentUser}`;
+
+    // optimistic
+    const optimistic = {
+      _id: messageId,
+      text: '',
+      createdAt: new Date(),
+      user: { _id: currentUser, name: auth().currentUser?.displayName || 'You', avatar: auth().currentUser?.photoURL || undefined },
+      type: 'voice',
+      audioUrl: null,
+      durationMs,
+      isUploading: true,
+    };
+    setMessages(prev => GiftedChat.append(prev, [optimistic]));
+
+    try {
+      const url = await uploadAudioToCloudinary(filePath);
+      await firestore().collection('channels').doc(channelId).collection('messages').doc(messageId).set({
+        type: 'voice',
+        audioUrl: url,
+        durationMs,
+        senderId: currentUser,
+        senderName: auth().currentUser?.displayName || 'You',
+        senderPic: auth().currentUser?.photoURL || null,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+      setMessages(prev => prev.map(m => (m._id === messageId ? { ...m, audioUrl: url, isUploading: false } : m)));
+    } catch (e) {
+      setMessages(prev => prev.filter(m => m._id !== messageId));
+      Alert.alert('Error', 'Failed to send voice message.');
+    }
+  }, [channelId, currentUser]);
+
   // Filter messages after followedAt
   useEffect(() => {
     if (!channelId || !followedAt) return;
@@ -85,6 +137,10 @@ export default function ChannelMsgScreen({ route, navigation }) {
         const allMessages = snapshot.docs
           .map(doc => {
             const data = doc.data();
+            const selfName = auth().currentUser?.displayName || auth().currentUser?.phoneNumber || 'You';
+            const mappedName = data.senderId === currentUser
+              ? selfName
+              : (data.senderName && data.senderName !== 'You' ? data.senderName : 'Member');
             return {
               _id: doc.id,
               text: data.text || '',
@@ -92,7 +148,7 @@ export default function ChannelMsgScreen({ route, navigation }) {
               createdAt: data.createdAt?.toDate() || new Date(),
               user: {
                 _id: data.senderId,
-                name: data.senderName || 'Member',
+                name: mappedName,
                 avatar: data.senderPic || undefined,
               },
               readBy: data.readBy || {},
@@ -160,6 +216,10 @@ export default function ChannelMsgScreen({ route, navigation }) {
       .onSnapshot(snapshot => {
         const allMessages = snapshot.docs.map(doc => {
           const data = doc.data();
+          const selfName = auth().currentUser?.displayName || auth().currentUser?.phoneNumber || 'You';
+          const mappedName = data.senderId === currentUser
+            ? selfName
+            : (data.senderName && data.senderName !== 'You' ? data.senderName : 'Member');
           return {
             _id: doc.id,
             text: data.text || '',
@@ -167,7 +227,7 @@ export default function ChannelMsgScreen({ route, navigation }) {
             createdAt: data.createdAt?.toDate() || new Date(),
             user: {
               _id: data.senderId,
-              name: data.senderName || 'Member',
+              name: mappedName,
               avatar: data.senderPic || undefined,
             },
             readBy: data.readBy || {},
@@ -584,11 +644,61 @@ export default function ChannelMsgScreen({ route, navigation }) {
         showAvatarForEveryMessage
         alwaysShowSend
         scrollToBottom
+        renderAvatar={(props) => {
+          const u = props?.currentMessage?.user || {};
+          const isSelf = u._id === currentUser;
+          const uri = u.avatar;
+          if (uri) {
+            return (
+              <Image source={{ uri }} style={{ width: 36, height: 36, borderRadius: 18, marginLeft: 4, marginRight: 4 }} />
+            );
+          }
+          const text = isSelf ? (auth().currentUser?.displayName?.[0] || auth().currentUser?.phoneNumber?.[0] || 'Y') : 'M';
+          return (
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#d9efe6', alignItems: 'center', justifyContent: 'center', marginLeft: 4, marginRight: 4 }}>
+              <Text style={{ color: '#075E54', fontWeight: '700' }}>{text.toUpperCase()}</Text>
+            </View>
+          );
+        }}
+        renderInputToolbar={() => (
+          isRecordingMode ? (
+            <View style={styles.customInputToolbar}>
+              <VoiceRecorderInput
+                isRecordingMode={isRecordingMode}
+                onToggleRecording={setIsRecordingMode}
+                onSendVoice={handleSendVoice}
+              />
+            </View>
+          ) : (
+            <View style={styles.bottomBar}>
+              <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.plusIconBtn}>
+                <Icon name="add-circle" size={36} color="#075E54" />
+              </TouchableOpacity>
+              <TextInput
+                style={styles.input}
+                placeholder="Type a message"
+                placeholderTextColor="gray"
+                value={inputText}
+                onChangeText={setInputText}
+                onSubmitEditing={sendTextMessage}
+              />
+              <TouchableOpacity
+                onPress={() => setIsRecordingMode(true)}
+                style={{ paddingHorizontal: 8 }}
+              >
+                <Icon name={isRecording ? 'mic' : 'mic-outline'} size={24} color={isRecording ? '#d00' : '#075E54'} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={sendTextMessage}>
+                <Icon name="send" size={24} color="#075E54" style={{ marginHorizontal: 5 }} />
+              </TouchableOpacity>
+            </View>
+          )
+        )}
         renderBubble={(props) => {
           const { currentMessage } = props;
           const isCurrentUser = currentMessage.user._id === currentUser;
           return (
-            <View style={[styles.bubbleWrapper, { alignSelf: isCurrentUser ? 'flex-end' : 'flex-start' }]}>
+            <View style={[styles.bubbleWrapper, { alignSelf: isCurrentUser ? 'flex-end' : 'flex-start' }]}> 
               {currentMessage.text && (
                 <Bubble
                   {...props}
@@ -654,7 +764,26 @@ export default function ChannelMsgScreen({ route, navigation }) {
                   </View>
                 </TouchableOpacity>
               )}
-              {currentMessage.type !== 'contact' && (
+              {currentMessage.type === 'voice' && (
+                <View style={[isCurrentUser ? styles.rightBubble : styles.leftBubble, styles.voiceBubbleBase]}>
+                  {currentMessage.isUploading ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Icon name="mic" size={18} color="#999" />
+                      <Text style={{ marginLeft: 8, color: '#999' }}>Uploading voice…</Text>
+                    </View>
+                  ) : (
+                    <VoiceMessagePlayer
+                      isCurrentUser={isCurrentUser}
+                      audioUrl={currentMessage.audioUrl}
+                      durationMs={currentMessage.durationMs}
+                      isRead={currentMessage.isRead}
+                      isDelivered={false}
+                      createdAt={currentMessage.createdAt}
+                    />
+                  )}
+                </View>
+              )}
+              {currentMessage.type !== 'contact' && currentMessage.type !== 'voice' && (
                 <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
                   <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                   {isCurrentUser && (
@@ -667,30 +796,6 @@ export default function ChannelMsgScreen({ route, navigation }) {
             </View>
           );
         }}
-        renderInputToolbar={() => (
-          <View style={styles.bottomBar}>
-            <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.plusIconBtn}>
-              <Icon name="add-circle" size={36} color="#075E54" />
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              placeholder="Type a message"
-              placeholderTextColor="gray"
-              value={inputText}
-              onChangeText={setInputText}
-              onSubmitEditing={sendTextMessage}
-            />
-            <TouchableOpacity
-              onLongPress={() => Alert.alert('Unavailable', 'Voice recording is temporarily disabled.')}
-              style={{ paddingHorizontal: 8 }}
-            >
-              <Icon name={isRecording ? 'mic' : 'mic-outline'} size={24} color={isRecording ? '#d00' : '#075E54'} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={sendTextMessage}>
-              <Icon name="send" size={24} color="#075E54" style={{ marginHorizontal: 5 }} />
-            </TouchableOpacity>
-          </View>
-        )}
       />
     </SafeAreaView>
   );
@@ -787,4 +892,22 @@ const styles = StyleSheet.create({
   contactBubble: { paddingRight: 16, paddingTop: 6, paddingBottom: 6, marginTop: 4 },
   contactDivider: { height: 1, backgroundColor: '#eee', marginVertical: 4 },
   closeIconBtn: { position: 'absolute', top: 16, right: 16, zIndex: 10 },
+  customInputToolbar: {
+    paddingVertical: Platform.OS === 'ios' ? 10 : 0,
+    borderTopWidth: 1,
+    borderTopColor: '#e8e8e8',
+    backgroundColor: '#fff',
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  voiceBubbleBase: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    maxWidth: '80%',
+    minWidth: 180,
+    marginTop: 4,
+    marginBottom: 2,
+  },
 });

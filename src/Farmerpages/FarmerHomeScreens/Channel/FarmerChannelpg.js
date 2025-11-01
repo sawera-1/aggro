@@ -14,6 +14,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import firestore from "@react-native-firebase/firestore";
 import auth from "@react-native-firebase/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from "react-i18next";
 
 
@@ -25,7 +26,7 @@ const ChannelsScreen = ({ navigation }) => {
 
   const userId = auth().currentUser?.uid;
 
-  // Fetch all channels + followed channels
+  // Fetch all channels + followed channels and compute unread counts
 const fetchChannels = async () => {
   try {
     setLoading(true);
@@ -46,14 +47,51 @@ const fetchChannels = async () => {
       image: doc.data().imageUrl || "", // ✅ use imageUrl field directly
     }));
 
-    // Get followed channel IDs
-    const followedIds = followSnap.docs.map((doc) => doc.id);
+    // Get followed channel IDs and followedAt timestamps
+    const followedMeta = followSnap.docs.reduce((acc, d) => {
+      acc[d.id] = { followedAt: d.data()?.followedAt?.toDate?.() || null };
+      return acc;
+    }, {});
+    const followedIds = Object.keys(followedMeta);
 
     // Merge followed info
-    const merged = allChannels.map((channel) => ({
+    let merged = allChannels.map((channel) => ({
       ...channel,
       isFollowed: followedIds.includes(channel.id),
+      unreadCount: 0,
     }));
+
+    // Compute unread counts for followed channels (best-effort on recent messages)
+    const computePromises = merged
+      .filter(ch => ch.isFollowed)
+      .map(async (ch) => {
+        try {
+          const since = followedMeta[ch.id]?.followedAt;
+          let q = firestore()
+            .collection('channels')
+            .doc(ch.id)
+            .collection('messages')
+            .orderBy('createdAt', 'desc')
+            .limit(50);
+          const snap = await q.get();
+          const unread = snap.docs.reduce((count, d) => {
+            const m = d.data();
+            const createdAt = m.createdAt?.toDate?.() || null;
+            const isAfterFollow = since ? (!createdAt || createdAt >= since) : true;
+            const readBy = m.readBy || {};
+            const isOwn = m.senderId === userId;
+            const isRead = !!readBy[userId];
+            return count + (isAfterFollow && !isOwn && !isRead ? 1 : 0);
+          }, 0);
+          ch.unreadCount = unread;
+        } catch (_) {}
+        return ch;
+      });
+
+    const withUnread = await Promise.all(computePromises);
+    // Align merged with unread values
+    const unreadMap = withUnread.reduce((acc, c) => { acc[c.id] = c.unreadCount; return acc; }, {});
+    merged = merged.map(c => ({ ...c, unreadCount: unreadMap[c.id] ?? c.unreadCount }));
 
     setChannels(merged);
   } catch (err) {
@@ -67,6 +105,13 @@ const fetchChannels = async () => {
   useEffect(() => {
     fetchChannels();
   }, []);
+
+  // Refresh when screen gains focus (ensures unread badge clears after viewing messages)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchChannels();
+    }, [])
+  );
 
 
 
@@ -281,6 +326,11 @@ const ChannelCard = ({ channel, onPress, buttonTitle, buttonColor, onButtonPress
           {channel.description}
         </Text>
       </View>
+      {channel.unreadCount > 0 && (
+        <View style={{ marginLeft: 'auto', backgroundColor: '#006644', borderRadius: 12, paddingVertical: 2, paddingHorizontal: 8 }}>
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>{channel.unreadCount}</Text>
+        </View>
+      )}
     </TouchableOpacity>
     <TouchableOpacity
       style={{

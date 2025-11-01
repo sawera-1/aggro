@@ -23,6 +23,8 @@ import Contacts from "react-native-contacts";
 import { launchImageLibrary } from "react-native-image-picker";
 import Geolocation from 'react-native-geolocation-service';
 import { Linking } from 'react-native';
+import VoiceRecorderInput from '../Chats/VoiceRecorderInput';
+import VoiceMessagePlayer from '../Chats/VoiceMessagePlayer';
 
 const CLOUDINARY_CLOUD_NAME = 'dumgs9cp4';
 const CLOUDINARY_UPLOAD_PRESET = 'react_native_uploads';
@@ -40,6 +42,7 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [isRecordingMode, setIsRecordingMode] = useState(false);
   const [contactsModalVisible, setContactsModalVisible] = useState(false);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [contacts, setContacts] = useState([]);
@@ -72,6 +75,55 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
     fetchChannelData();
   }, [channelId]);
 
+  // Upload audio to Cloudinary via video endpoint
+  const uploadAudioToCloudinary = async (uri, filename = `voice_${Date.now()}.m4a`, mimeType = 'audio/m4a') => {
+    const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+    const data = new FormData();
+    data.append('file', { uri: uri.startsWith('file://') ? uri : `file://${uri}`, name: filename, type: mimeType });
+    data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    const res = await fetch(endpoint, { method: 'POST', body: data });
+    const json = await res.json();
+    if (!json.secure_url) throw new Error(json.error?.message || 'Audio upload failed');
+    return json.secure_url;
+  };
+
+  // Send recorded voice message to channel
+  const handleSendVoice = useCallback(async (filePath, durationSeconds) => {
+    if (!filePath || !currentUser) return;
+    const durationMs = Math.max(1000, Math.round(durationSeconds * 1000));
+    const messageId = `${Date.now()}_${currentUser}`;
+    const myName = auth().currentUser?.displayName || auth().currentUser?.phoneNumber || currentUser;
+
+    const optimistic = {
+      _id: messageId,
+      text: '',
+      createdAt: new Date(),
+      user: { _id: currentUser, name: myName, avatar: auth().currentUser?.photoURL || undefined },
+      type: 'voice',
+      audioUrl: null,
+      durationMs,
+      isUploading: true,
+    };
+    setMessages(prev => GiftedChat.append(prev, [optimistic]));
+
+    try {
+      const url = await uploadAudioToCloudinary(filePath);
+      await firestore().collection('channels').doc(channelId).collection('messages').doc(messageId).set({
+        type: 'voice',
+        audioUrl: url,
+        durationMs,
+        senderId: currentUser,
+        senderName: myName,
+        senderPic: auth().currentUser?.photoURL || null,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+      setMessages(prev => prev.map(m => (m._id === messageId ? { ...m, audioUrl: url, isUploading: false } : m)));
+    } catch (e) {
+      setMessages(prev => prev.filter(m => m._id !== messageId));
+      Alert.alert('Error', 'Failed to send voice message.');
+    }
+  }, [channelId, currentUser]);
+
   // Real-time messages listener
   useEffect(() => {
     if (!channelId) return;
@@ -83,6 +135,11 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
       .onSnapshot(snapshot => {
         const allMessages = snapshot.docs.map(doc => {
           const data = doc.data();
+          const readBy = data.readBy || {};
+          const selfName = auth().currentUser?.displayName || auth().currentUser?.phoneNumber || 'You';
+          const mappedName = data.senderId === currentUser
+            ? selfName
+            : (data.senderName && data.senderName !== 'You' ? data.senderName : 'Member');
           return {
             _id: doc.id,
             text: data.text || '',
@@ -90,11 +147,11 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
             createdAt: data.createdAt?.toDate() || new Date(),
             user: {
               _id: data.senderId,
-              name: data.senderName || 'Member',
+              name: mappedName,
               avatar: data.senderPic || undefined,
             },
-            readBy: data.readBy || {},
-            isRead: !!(data.readBy && data.readBy[currentUser]),
+            readBy,
+            isRead: Object.keys(readBy).some(uid => uid !== currentUser),
             type: data.type || 'text',
             documentUrl: data.documentUrl,
             fileName: data.fileName,
@@ -141,6 +198,7 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
     if (!text) return;
     setInputText("");
     try {
+      const myName = auth().currentUser?.displayName || auth().currentUser?.phoneNumber || currentUser;
       await firestore()
         .collection('channels')
         .doc(channelId)
@@ -148,10 +206,9 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
         .add({
           text,
           senderId: currentUser,
-          senderName: auth().currentUser?.displayName || 'You',
+          senderName: myName,
           senderPic: auth().currentUser?.photoURL || null,
           createdAt: firestore.FieldValue.serverTimestamp(),
-          readBy: { [currentUser]: firestore.FieldValue.serverTimestamp() },
           type: 'text',
         });
     } catch {
@@ -192,6 +249,7 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
 
     try {
       for (const asset of selectedImages) {
+        const myName = auth().currentUser?.displayName || auth().currentUser?.phoneNumber || currentUser;
         const url = await uploadToCloudinary(asset.uri, asset.fileName, asset.type);
         const messageId = `${Date.now()}_${currentUser}`;
         await firestore()
@@ -203,10 +261,9 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
             type: 'image',
             imageUrl: url,
             senderId: currentUser,
-            senderName: auth().currentUser?.displayName || 'You',
+            senderName: myName,
             senderPic: auth().currentUser?.photoURL || null,
             createdAt: firestore.FieldValue.serverTimestamp(),
-            readBy: { [currentUser]: firestore.FieldValue.serverTimestamp() },
           });
       }
       setModalVisible(false);
@@ -257,15 +314,15 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
       const name = contact.displayName || `${contact.givenName || ''} ${contact.familyName || ''}`.trim();
       const phone = contact.phoneNumbers?.[0]?.number || '';
       if (!phone && !name) return Alert.alert('Contacts', 'Selected contact has no name or phone.');
+      const myName = auth().currentUser?.displayName || auth().currentUser?.phoneNumber || currentUser;
       await firestore().collection('channels').doc(channelId).collection('messages').add({
         type: 'contact',
         contactName: name,
         contactPhone: phone,
         senderId: currentUser,
-        senderName: auth().currentUser?.displayName || 'You',
+        senderName: myName,
         senderPic: auth().currentUser?.photoURL || null,
         createdAt: firestore.FieldValue.serverTimestamp(),
-        readBy: { [currentUser]: firestore.FieldValue.serverTimestamp() },
       });
       setContactsModalVisible(false);
     } catch {
@@ -284,16 +341,16 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
         async position => {
           const { latitude, longitude } = position.coords;
           const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          const myName = auth().currentUser?.displayName || auth().currentUser?.phoneNumber || currentUser;
           await firestore().collection('channels').doc(channelId).collection('messages').add({
             type: 'location',
             latitude,
             longitude,
             locationUrl: mapUrl,
             senderId: currentUser,
-            senderName: auth().currentUser?.displayName || 'You',
+            senderName: myName,
             senderPic: auth().currentUser?.photoURL || null,
             createdAt: firestore.FieldValue.serverTimestamp(),
-            readBy: { [currentUser]: firestore.FieldValue.serverTimestamp() },
           });
           setModalVisible(false);
         },
@@ -304,6 +361,7 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
       Alert.alert('Error', 'Failed to share location.');
     }
   };
+
 
   // Full-screen image modal
   const FullImageModal = () => (
@@ -544,22 +602,73 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
         showAvatarForEveryMessage
         alwaysShowSend
         scrollToBottom
+        renderInputToolbar={() => (
+          isRecordingMode ? (
+            <View style={styles.customInputToolbar}>
+              <VoiceRecorderInput
+                isRecordingMode={isRecordingMode}
+                onToggleRecording={setIsRecordingMode}
+                onSendVoice={handleSendVoice}
+              />
+            </View>
+          ) : (
+            <View style={styles.bottomBar}>
+              <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.plusIconBtn}>
+                <Icon name="add-circle" size={36} color="#075E54" />
+              </TouchableOpacity>
+              <TextInput
+                style={styles.input}
+                placeholder="Type a message"
+                placeholderTextColor="gray"
+                value={inputText}
+                onChangeText={setInputText}
+                onSubmitEditing={sendTextMessage}
+              />
+              <TouchableOpacity onPress={() => setIsRecordingMode(true)} style={{ paddingHorizontal: 8 }}>
+                <Icon name={isRecording ? 'mic' : 'mic-outline'} size={24} color={isRecording ? '#d00' : '#075E54'} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={sendTextMessage}>
+                <Icon name="send" size={24} color="#075E54" style={{ marginHorizontal: 5 }} />
+              </TouchableOpacity>
+            </View>
+          )
+        )}
         renderBubble={(props) => {
           const { currentMessage } = props;
           const isCurrentUser = currentMessage.user._id === currentUser;
+
+          if (currentMessage.type === 'voice' && (currentMessage.isUploading || currentMessage.audioUrl === 'placeholder')) {
+            return (
+              <View style={[styles.bubbleWrapper, { alignSelf: 'flex-end', maxWidth: '75%', paddingVertical: 10, paddingHorizontal: 12 }]}>
+                <View style={[styles.rightBubble, styles.voiceBubbleBase, { backgroundColor: '#dcecd4', flexDirection: 'row', alignItems: 'center' }]}>
+                  <ActivityIndicator size="small" color="#075E54" style={{ marginRight: 8 }} />
+                  <Text style={{ color: '#075E54' }}>Uploading voice message...</Text>
+                </View>
+              </View>
+            );
+          }
+          if (currentMessage.type === 'voice' && currentMessage.audioUrl) {
+            return (
+              <View style={[styles.bubbleWrapper, { alignSelf: isCurrentUser ? 'flex-end' : 'flex-start' }]}> 
+                <VoiceMessagePlayer
+                  isCurrentUser={isCurrentUser}
+                  audioUrl={currentMessage.audioUrl}
+                  durationMs={currentMessage.durationMs}
+                  isRead={currentMessage.isRead}
+                  isDelivered={false}
+                  createdAt={currentMessage.createdAt}
+                />
+              </View>
+            );
+          }
+
           return (
-            <View style={[styles.bubbleWrapper, { alignSelf: isCurrentUser ? 'flex-end' : 'flex-start' }]}>
+            <View style={[styles.bubbleWrapper, { alignSelf: isCurrentUser ? 'flex-end' : 'flex-start' }]}> 
               {currentMessage.text && (
                 <Bubble
                   {...props}
-                  wrapperStyle={{
-                    right: styles.rightBubble,
-                    left: styles.leftBubble,
-                  }}
-                  textStyle={{
-                    right: styles.rightText,
-                    left: styles.leftText,
-                  }}
+                  wrapperStyle={{ right: styles.rightBubble, left: styles.leftBubble }}
+                  textStyle={{ right: styles.rightText, left: styles.leftText }}
                   renderTime={() => null}
                 />
               )}
@@ -618,7 +727,7 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
                 <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
                   <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                   {isCurrentUser && (
-                    <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : '#999' }]}>
+                    <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : '#999' }]}> 
                       {currentMessage.isRead ? '✓✓' : '✓'}
                     </Text>
                   )}
@@ -627,30 +736,6 @@ export default function OwnChannelMsgScreen({ route, navigation }) {
             </View>
           );
         }}
-        renderInputToolbar={() => (
-          <View style={styles.bottomBar}>
-            <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.plusIconBtn}>
-              <Icon name="add-circle" size={36} color="#075E54" />
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              placeholder="Type a message"
-              placeholderTextColor="gray"
-              value={inputText}
-              onChangeText={setInputText}
-              onSubmitEditing={sendTextMessage}
-            />
-            <TouchableOpacity
-              onLongPress={() => Alert.alert('Unavailable', 'Voice recording is temporarily disabled.')}
-              style={{ paddingHorizontal: 8 }}
-            >
-              <Icon name={isRecording ? 'mic' : 'mic-outline'} size={24} color={isRecording ? '#d00' : '#075E54'} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={sendTextMessage}>
-              <Icon name="send" size={24} color="#075E54" style={{ marginHorizontal: 5 }} />
-            </TouchableOpacity>
-          </View>
-        )}
       />
     </SafeAreaView>
   );
@@ -747,4 +832,25 @@ const styles = StyleSheet.create({
   contactBubble: { paddingRight: 16, paddingTop: 6, paddingBottom: 6, marginTop: 4 },
   contactDivider: { height: 1, backgroundColor: '#eee', marginVertical: 4 },
   closeIconBtn: { position: 'absolute', top: 16, right: 16, zIndex: 10 },
+  senderHeaderAvatar: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#d9efe6', marginRight: 6 },
+  nameChip: { alignSelf: 'flex-start', marginLeft: 6, marginBottom: 2, backgroundColor: '#263238', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  nameChipText: { fontSize: 11, color: '#fff', maxWidth: 240 },
+  customInputToolbar: {
+    paddingVertical: Platform.OS === 'ios' ? 10 : 0,
+    borderTopWidth: 1,
+    borderTopColor: '#e8e8e8',
+    backgroundColor: '#fff',
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  voiceBubbleBase: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    maxWidth: '80%',
+    minWidth: 180,
+    marginTop: 4,
+    marginBottom: 2,
+  },
 });

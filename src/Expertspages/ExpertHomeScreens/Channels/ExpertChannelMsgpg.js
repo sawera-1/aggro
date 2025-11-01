@@ -22,6 +22,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import Contacts from "react-native-contacts";
 import { launchImageLibrary } from "react-native-image-picker";
 import Geolocation from "react-native-geolocation-service";
+import VoiceMessagePlayer from '../Chats/VoiceMessagePlayer';
 
 const CLOUDINARY_CLOUD_NAME = 'dumgs9cp4';
 const CLOUDINARY_UPLOAD_PRESET = 'react_native_uploads';
@@ -42,7 +43,6 @@ export default function ExpertChannelMsg ({ route, navigation }) {
   const [contactsModalVisible, setContactsModalVisible] = useState(false);
   const [contactsLoading, setContactsLoading] = useState(false);
   const [contacts, setContacts] = useState([]);
-
 
   // Add state for followed timestamp
   const [followedAt, setFollowedAt] = useState(null);
@@ -85,6 +85,10 @@ export default function ExpertChannelMsg ({ route, navigation }) {
         const allMessages = snapshot.docs
           .map(doc => {
             const data = doc.data();
+            const selfName = auth().currentUser?.displayName || auth().currentUser?.phoneNumber || 'You';
+            const mappedName = data.senderId === currentUser
+              ? selfName
+              : 'Member';
             return {
               _id: doc.id,
               text: data.text || '',
@@ -92,7 +96,7 @@ export default function ExpertChannelMsg ({ route, navigation }) {
               createdAt: data.createdAt?.toDate() || new Date(),
               user: {
                 _id: data.senderId,
-                name: data.senderName || 'Member',
+                name: mappedName,
                 avatar: data.senderPic || undefined,
               },
               readBy: data.readBy || {},
@@ -160,6 +164,10 @@ export default function ExpertChannelMsg ({ route, navigation }) {
       .onSnapshot(snapshot => {
         const allMessages = snapshot.docs.map(doc => {
           const data = doc.data();
+          const selfName = auth().currentUser?.displayName || auth().currentUser?.phoneNumber || 'You';
+          const mappedName = data.senderId === currentUser
+            ? selfName
+            : 'Member';
           return {
             _id: doc.id,
             text: data.text || '',
@@ -167,7 +175,7 @@ export default function ExpertChannelMsg ({ route, navigation }) {
             createdAt: data.createdAt?.toDate() || new Date(),
             user: {
               _id: data.senderId,
-              name: data.senderName || 'Member',
+              name: mappedName,
               avatar: data.senderPic || undefined,
             },
             readBy: data.readBy || {},
@@ -620,14 +628,22 @@ export default function ExpertChannelMsg ({ route, navigation }) {
                   />
                 </TouchableOpacity>
               )}
+              {currentMessage.type === 'voice' && currentMessage.audioUrl && (
+                <View style={[isCurrentUser ? styles.rightBubble : styles.leftBubble, { paddingVertical: 6, paddingHorizontal: 8, marginTop: 4 }]}>
+                  <VoiceMessagePlayer
+                    isCurrentUser={isCurrentUser}
+                    audioUrl={currentMessage.audioUrl}
+                    durationMs={currentMessage.durationMs}
+                    isRead={currentMessage.isRead}
+                    isDelivered={false}
+                    createdAt={currentMessage.createdAt}
+                  />
+                </View>
+              )}
               {currentMessage.type === 'contact' && (
                 <TouchableOpacity
                   activeOpacity={0.9}
-                  onPress={() => {
-                    if (currentMessage.contactPhone) {
-                      Linking.openURL(`tel:${currentMessage.contactPhone}`);
-                    }
-                  }}
+                  onPress={() => { if (currentMessage.contactPhone) { Linking.openURL(`tel:${currentMessage.contactPhone}`); } }}
                   style={[isCurrentUser ? styles.rightBubble : styles.leftBubble, styles.contactBubble]}
                 >
                   <View style={styles.contactInlineRow}>
@@ -654,7 +670,7 @@ export default function ExpertChannelMsg ({ route, navigation }) {
                   </View>
                 </TouchableOpacity>
               )}
-              {currentMessage.type !== 'contact' && (
+              {currentMessage.type !== 'contact' && currentMessage.type !== 'voice' && (
                 <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
                   <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                   {isCurrentUser && (
