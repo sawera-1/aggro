@@ -98,6 +98,9 @@ export default function ExpertChatScreen({ route, navigation }) {
             fileName: data.fileName,
             contactName: data.contactName,
             contactPhone: data.contactPhone,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            locationUrl: data.locationUrl,
             audioUrl: data.audioUrl,
             durationMs: data.durationMs,
           };
@@ -170,6 +173,45 @@ export default function ExpertChatScreen({ route, navigation }) {
       Alert.alert('Error', 'Failed to send message.');
     }
   }, [current_user, second_user, chatId, dpImage]);
+
+  // Send location message
+  const handleSendLocation = async ({ latitude, longitude }) => {
+    if (!latitude || !longitude) return;
+    const messageId = `${Date.now()}_${current_user}`;
+    const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+    const optimistic = {
+      _id: messageId,
+      text: '',
+      createdAt: new Date(),
+      user: { _id: current_user, name: 'You', avatar: dpImage },
+      type: 'location',
+      latitude,
+      longitude,
+      locationUrl,
+    };
+    setMessages(prev => GiftedChat.append(prev, [optimistic]));
+
+    try {
+      const chatRef = firestore().collection('chats').doc(chatId);
+      const chatDoc = await chatRef.get();
+      if (!chatDoc.exists) {
+        await chatRef.set({ participants: [current_user, second_user], createdAt: firestore.FieldValue.serverTimestamp() });
+      }
+      await chatRef.collection('messages').doc(messageId).set({
+        type: 'location',
+        latitude,
+        longitude,
+        locationUrl,
+        senderId: current_user,
+        receiverId: second_user,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        readBy: { [current_user]: firestore.FieldValue.serverTimestamp() },
+      });
+    } catch (e) {
+      Alert.alert('Error', 'Failed to send location.');
+      setMessages(prev => prev.filter(m => m._id !== messageId));
+    }
+  };
 
   // Cloudinary upload
   const uploadToCloudinary = async (uri, filename, mimeType, resourceType = 'auto') => {
@@ -351,7 +393,12 @@ export default function ExpertChatScreen({ route, navigation }) {
               <Text style={styles.plusOptionText}>Contact</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.plusOptionBtn} onPress={LocationPiker}>
+            <TouchableOpacity style={styles.plusOptionBtn} onPress={() => {
+              setModalVisible(false);
+              navigation.navigate('LocationPiker', {
+                onPick: (coords) => handleSendLocation(coords),
+              });
+            }}>
               <Icon name="location-outline" size={28} color="#075E54" />
               <Text style={styles.plusOptionText}>Location</Text>
             </TouchableOpacity>
@@ -678,7 +725,26 @@ export default function ExpertChatScreen({ route, navigation }) {
             </View>
           </TouchableOpacity>
         )}
-        {currentMessage.type !== 'contact' && currentMessage.type !== 'voice' && (
+        {currentMessage.type === 'location' && (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => currentMessage.locationUrl && Linking.openURL(currentMessage.locationUrl)}
+            style={[isCurrentUser ? styles.rightBubble : styles.leftBubble, { paddingVertical: 8 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 72 }}>
+              <Icon name="location" size={18} color="#075E54" />
+              <Text style={{ marginLeft: 8, color: '#102a43', fontWeight: '600' }}>Location</Text>
+            </View>
+            <View style={styles.timeTickContainer}>
+              <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+              {isCurrentUser && (
+                <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>
+                  {currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
+        )}
+        {currentMessage.type !== 'contact' && currentMessage.type !== 'voice' && currentMessage.type !== 'location' && (
           <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
             <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
             {isCurrentUser && <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : currentMessage.isDelivered ? '#999' : '#aaa' }]}>{currentMessage.isRead ? '✓✓' : currentMessage.isDelivered ? '✓✓' : '✓'}</Text>}
@@ -750,8 +816,8 @@ const styles = StyleSheet.create({
   userName: { fontSize: 16, fontWeight: '600', color: '#fff' },
   userPhone: { fontSize: 13, color: '#e6e6e6' },
   bubbleWrapper: { position: 'relative', marginBottom: 2 },
-  rightBubble: { backgroundColor: '#DCF8C6', borderRadius: 12, borderTopRightRadius: 2, marginRight: 8, marginBottom: 6, paddingRight: 45, paddingVertical: 6, paddingLeft: 10, maxWidth: '80%' },
-  leftBubble: { backgroundColor: '#FFFFFF', borderRadius: 12, borderTopLeftRadius: 2, marginLeft: 8, marginBottom: 6, paddingRight: 45, paddingVertical: 6, paddingLeft: 10, maxWidth: '80%' },
+  rightBubble: { backgroundColor: '#DCF8C6', borderRadius: 12, borderTopRightRadius: 2, marginRight: 8, marginBottom: 6, paddingRight: 68, paddingVertical: 8, paddingLeft: 10, maxWidth: '92%' },
+  leftBubble: { backgroundColor: '#FFFFFF', borderRadius: 12, borderTopLeftRadius: 2, marginLeft: 8, marginBottom: 6, paddingRight: 68, paddingVertical: 8, paddingLeft: 10, maxWidth: '92%' },
   rightText: { color: '#000', fontSize: 15 },
   leftText: { color: '#000', fontSize: 15 },
   contactInlineRow: { flexDirection: 'row', alignItems: 'center' },
@@ -761,7 +827,7 @@ const styles = StyleSheet.create({
   contactBubble: { paddingRight: 56, paddingTop: 4, paddingBottom: 4, marginBottom: 2 },
   contactDivider: { height: 0, marginTop: 0, marginBottom: 0 },
   timeTickContainer: { position: 'absolute', bottom: 4, right: 12, flexDirection: 'row', alignItems: 'center' },
-  timeText: { fontSize: 10, color: '#667781', opacity: 0.9, marginRight: 2 },
+  timeText: { fontSize: 10, color: '#667781', opacity: 0.9, marginRight: 6 },
   tickText: { fontSize: 11 },
   sentContainer: { right: 12 },
   receivedContainer: { right: 12 },

@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ChatHomeScreen from '../../Farmerpages/FarmerHomeScreens/Chat/FarmerChatpg';
 import ChatScreen from '../../Farmerpages/FarmerHomeScreens/Chat/ChatMsgpg';
 import ChatDescription from '../../Farmerpages/FarmerHomeScreens/Chat/ChatDescriptionpg';
+import LocationPiker from '../../Expertspages/ExpertHomeScreens/Chats/LocationPikerpg';
 
 const Stack = createNativeStackNavigator();
 
@@ -17,6 +18,7 @@ export default function ChatsStack() {
         options={{ unmountOnBlur: true }} // prevents duplicate views
       />
       <Stack.Screen name="ChatDes" component={ChatDescription} />
+      <Stack.Screen name="LocationPiker" component={LocationPiker} />
     </Stack.Navigator>
   );
 }

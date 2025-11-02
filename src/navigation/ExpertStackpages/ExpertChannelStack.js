@@ -6,6 +6,7 @@ import ExpertChannelMsg from '../../Expertspages/ExpertHomeScreens/Channels/Expe
 import ExpertChannelDescription from '../../Expertspages/ExpertHomeScreens/Channels/ExpertChannelDescriptionpg';
 import OwnChannelDescription from '../../Expertspages/ExpertHomeScreens/Channels/OwnChannelDescritionpg';
 import CreateChannel from '../../Expertspages/ExpertHomeScreens/Channels/AddChannelpg';
+import LocationPiker from '../../Expertspages/ExpertHomeScreens/Chats/LocationPikerpg';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ const ExpertChannelStack = () => {
       <Stack.Screen name="ExpertChannelDescription" component={ExpertChannelDescription} />
        <Stack.Screen name="OwnChannelDescription" component={OwnChannelDescription} />
        <Stack.Screen name="CreateChannel" component={CreateChannel} />
+              <Stack.Screen name="LocationPiker" component={LocationPiker} />
     </Stack.Navigator>
   );
 };

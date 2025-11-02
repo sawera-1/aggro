@@ -12,7 +12,6 @@ import {
   FlatList,
   TextInput,
   Platform,
-  PermissionsAndroid,
   Linking,
 } from "react-native";
 import { GiftedChat, Bubble } from "react-native-gifted-chat";
@@ -21,7 +20,6 @@ import auth from "@react-native-firebase/auth";
 import Icon from "react-native-vector-icons/Ionicons";
 import Contacts from "react-native-contacts";
 import { launchImageLibrary } from "react-native-image-picker";
-import Geolocation from "react-native-geolocation-service";
 import VoiceRecorderInput from '../../../Expertspages/ExpertHomeScreens/Chats/VoiceRecorderInput';
 import VoiceMessagePlayer from '../../../Expertspages/ExpertHomeScreens/Chats/VoiceMessagePlayer';
 
@@ -517,9 +515,38 @@ export default function ChannelMsgScreen({ route, navigation }) {
       </Modal>
     );
   });
-  //fake location
-  const handleLocation = () => {
 
+  const handleSendLocation = async ({ latitude, longitude }) => {
+    if (!latitude || !longitude || !currentUser) return;
+    const messageId = `${Date.now()}_${currentUser}`;
+    const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+    const optimistic = {
+      _id: messageId,
+      text: '',
+      createdAt: new Date(),
+      user: { _id: currentUser, name: auth().currentUser?.displayName || 'You', avatar: auth().currentUser?.photoURL || undefined },
+      type: 'location',
+      latitude,
+      longitude,
+      locationUrl,
+    };
+    setMessages(prev => GiftedChat.append(prev, [optimistic]));
+
+    try {
+      await firestore().collection('channels').doc(channelId).collection('messages').doc(messageId).set({
+        type: 'location',
+        latitude,
+        longitude,
+        locationUrl,
+        senderId: currentUser,
+        senderName: auth().currentUser?.displayName || 'You',
+        senderPic: auth().currentUser?.photoURL || null,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      setMessages(prev => prev.filter(m => m._id !== messageId));
+      Alert.alert('Error', 'Failed to send location.');
+    }
   };
 
   // Plus modal in bottom bar
@@ -538,7 +565,15 @@ export default function ChannelMsgScreen({ route, navigation }) {
               <Text style={styles.plusOptionText}>Contact</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.plusOptionBtn} onPress={handleLocation}>
+            <TouchableOpacity
+              style={styles.plusOptionBtn}
+              onPress={() => {
+                setModalVisible(false);
+                navigation.navigate('LocationPiker', {
+                  onPick: (coords) => handleSendLocation(coords),
+                });
+              }}
+            >
               <Icon name="location-outline" size={28} color="#075E54" />
               <Text style={styles.plusOptionText}>Location</Text>
             </TouchableOpacity>
@@ -783,7 +818,33 @@ export default function ChannelMsgScreen({ route, navigation }) {
                   )}
                 </View>
               )}
-              {currentMessage.type !== 'contact' && currentMessage.type !== 'voice' && (
+              {currentMessage.type === 'location' && (
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => currentMessage.locationUrl && Linking.openURL(currentMessage.locationUrl)}
+                  style={[isCurrentUser ? styles.rightBubble : styles.leftBubble, { paddingVertical: 8, paddingRight: 68, maxWidth: '92%' }]}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'nowrap' }}>
+                    <Icon name="location" size={18} color="#075E54" />
+                    <Text
+                      style={{ marginLeft: 8, color: '#102a43', fontWeight: '600' }}
+                      numberOfLines={1}
+                      ellipsizeMode="clip"
+                    >
+                      Location
+                    </Text>
+                  </View>
+                  <View style={styles.timeTickContainer}>
+                    <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    {isCurrentUser && (
+                      <Text style={[styles.tickText, { color: currentMessage.isRead ? '#34B7F1' : '#999' }]}>
+                        {currentMessage.isRead ? '✓✓' : '✓'}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              )}
+              {currentMessage.type !== 'contact' && currentMessage.type !== 'voice' && currentMessage.type !== 'location' && (
                 <View style={[styles.timeTickContainer, isCurrentUser ? styles.sentContainer : styles.receivedContainer]}>
                   <Text style={styles.timeText}>{new Date(currentMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                   {isCurrentUser && (
