@@ -130,32 +130,7 @@ const UpdateScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Search Bar */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: "#fff",
-            borderRadius: 25,
-            paddingHorizontal: 15,
-            height: 45,
-            marginHorizontal: 15,
-            marginTop: 15,
-            elevation: 3,
-          }}
-        >
-          <Icon name="search" size={20} color="#666" />
-          <TextInput
-            placeholder={t("updates.search")}
-            placeholderTextColor="#888"
-            style={{
-              flex: 1,
-              marginLeft: 10,
-              color: "#000",
-              fontSize: 16,
-            }}
-          />
-        </View>
+       
 
         {/* Tabs */}
         <View

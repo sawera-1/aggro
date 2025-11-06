@@ -2,11 +2,13 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import ChannelStack from './ChannelStack';
 import ChatsStack from './ChatStack';
 import AIChatScreen from '../../Farmerpages/FarmerHomeScreens/FarmerAipg';
 import UpdatesStack from './UpdateStack';
+import FarmerAI from '../../Farmerpages/FarmerHomeScreens/FarmerAIchatBotpg';
 
 
 
@@ -35,7 +37,7 @@ export default function BottomTabs() {
         options={({ route }) => ({
           tabBarLabel: t('bottomTabs.channels'),
           tabBarStyle: {
-            display: tabBarVisible(route, ['ChannelMsg', 'ChannelDes']),
+            display: tabBarVisible(route, ['ChannelMsg', 'ChannelDes',"LocationPiker"]),
             backgroundColor: '#006644',
             height: 60,
           },
@@ -49,7 +51,7 @@ export default function BottomTabs() {
         options={({ route }) => ({
           tabBarLabel: t('bottomTabs.chats'),
           tabBarStyle: {
-            display: tabBarVisible(route, ['ChatMsg', 'ChatDes']),
+            display: tabBarVisible(route, ['ChatMsg', 'ChatDes',"LocationPiker"]),
             backgroundColor: '#006644',
             height: 60,
           },
@@ -58,8 +60,24 @@ export default function BottomTabs() {
       />
 
       <Tab.Screen
-        name="AiTab"
-        component={AIChatScreen}
+  name="AiTab"
+  component={AIChatScreen}
+  options={{
+    tabBarLabel: t('bottomTabs.scan'), // label like "Scan" or "Plant Scan"
+    tabBarStyle: {
+      display: 'none', // hide tab bar when this screen is open
+      backgroundColor: '#006644',
+      height: 60,
+    },
+    tabBarIcon: ({ color, size }) => (
+      <Ionicons name="leaf-outline" color={color} size={size} />
+    ),
+  }}
+/>
+
+      <Tab.Screen
+        name="FarmerBot"
+        component={FarmerAI}
         options={{
           tabBarLabel: t('bottomTabs.ai'),
           tabBarStyle: {

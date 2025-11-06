@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,8 +14,9 @@ import Tts from 'react-native-tts';
 
 export default function ExpertCropReadMore({ navigation, route }) {
   const { crop } = route.params;
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
-  //  Function for TTS
+  // Speak function
   const speakDetails = () => {
     const details = `
       Crop Name: ${crop?.name || "N/A"}.
@@ -27,8 +28,24 @@ export default function ExpertCropReadMore({ navigation, route }) {
       Soil Type: ${crop?.soilType || "N/A"}.
       Yield Amount: ${crop?.yieldAmount || "N/A"}.
     `;
+    Tts.stop();
+    Tts.setDefaultLanguage("en-US");
+    Tts.setDefaultVoice("en-us-x-tpf-local");
+    Tts.setDefaultRate(0.45);
+    Tts.setDefaultPitch(1.0);
+    setIsSpeaking(true);
     Tts.speak(details);
   };
+
+  // Stop function
+  const stopSpeaking = () => {
+    Tts.stop();
+    setIsSpeaking(false);
+  };
+
+  // Automatically hide stop button when finished
+  Tts.addEventListener('tts-finish', () => setIsSpeaking(false));
+  Tts.addEventListener('tts-cancel', () => setIsSpeaking(false));
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -146,17 +163,33 @@ export default function ExpertCropReadMore({ navigation, route }) {
                 </Text>
               </TouchableOpacity>
 
-              {/* Speaker Button */}
-              <TouchableOpacity
-                onPress={speakDetails}
-                style={{
-                  backgroundColor: '#006644',
-                  padding: 10,
-                  borderRadius: 50,
-                }}
-              >
-                <Icon name="volume-high" size={20} color="#fff" />
-              </TouchableOpacity>
+              {/* Speaker / Stop Button */}
+              {!isSpeaking && (
+                <TouchableOpacity
+                  onPress={speakDetails}
+                  style={{
+                    backgroundColor: '#006644',
+                    padding: 10,
+                    borderRadius: 50,
+                  }}
+                >
+                  <Icon name="volume-high" size={20} color="#fff" />
+                </TouchableOpacity>
+              )}
+
+              {isSpeaking && (
+                <TouchableOpacity
+                  onPress={stopSpeaking}
+                  style={{
+                    backgroundColor: 'red',
+                    padding: 10,
+                    borderRadius: 50,
+                    marginLeft: 10,
+                  }}
+                >
+                  <Icon name="stop" size={20} color="#fff" />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </ScrollView>

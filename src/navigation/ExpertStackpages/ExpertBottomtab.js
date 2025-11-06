@@ -7,7 +7,8 @@ import ExpertChannelStack from './ExpertChannelStack';
 import ExpertChatStack from './ExpertChatStack';
 import ExpertUpdateStack from './ExpertUpdateStack';
 import ExpertAI from '../../Expertspages/ExpertHomeScreens/ExpertAipg';
-
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import ExpertAIChatbot from '../../Expertspages/ExpertHomeScreens/ExpertAIchatbotpg';
 
 
 const Tab = createBottomTabNavigator();
@@ -39,7 +40,7 @@ export default function ExpertBottomTabs() {
               'OwnChannelMsgScreen',
               'ExpertChannelMsg',
               'ExpertChannelDescription',
-              'OwnChannelDescription',
+              'OwnChannelDescription',"LocationPiker",
             ]),
             backgroundColor: '#006644',
             height: 60,
@@ -54,17 +55,32 @@ export default function ExpertBottomTabs() {
         options={({ route }) => ({
           tabBarLabel: t('expertBottomTabs.chat'),
           tabBarStyle: {
-            display: tabBarVisible(route, ['ExpertChatMsg', 'ExpertChatDes']),
+            display: tabBarVisible(route, ['ExpertChatMsg', 'ExpertChatDes',"LocationPiker"]),
             backgroundColor: '#006644',
             height: 60,
           },
           tabBarIcon: ({ color, size }) => <Icon name="chat" color={color} size={size} />,
         })}
       />
+      <Tab.Screen
+  name="AiTab"
+  component={ExpertAI}
+  options={{
+    tabBarLabel: t('bottomTabs.scan'), // label like "Scan" or "Plant Scan"
+    tabBarStyle: {
+      display: 'none', // hide tab bar when this screen is open
+      backgroundColor: '#006644',
+      height: 60,
+    },
+    tabBarIcon: ({ color, size }) => (
+      <Ionicons name="leaf-outline" color={color} size={size} />
+    ),
+  }}
+/>
 
       <Tab.Screen
         name="ExpertAiTab"
-        component={ExpertAI}
+        component={ExpertAIChatbot}
         options={{
           tabBarLabel: t('expertBottomTabs.ai'),
           tabBarStyle: {
