@@ -4,439 +4,401 @@
     "farmer": "Farmer",
     "expert": "Expert"
   },
-  "farmerSignup": {
-    "title": "Farmer Sign Up",
-    "subtitle": "Create an account to continue",
-    "phonePlaceholder": "Phone number",
+ "farmerSignup": {
+    "title": "Farmer Signup",
+    "subtitle": "Enter your mobile number to create your account",
+    "phonePlaceholder": "Enter phone number",
     "continue": "Continue",
     "alreadyAccount": "Already have an account?",
-    "login": "Log in"
+    "login": "Login"
+  },
+  "alerts": {
+    "errorTitle": "Error",
+    "enterPhone": "Please enter your phone number.",
+    "invalidPhone": "Please enter a valid phone number.",
+    "otpSentTitle": "OTP Sent!",
+    "otpSentMessage": "An OTP has been sent to {{number}}. Please verify to continue.",
+    "ok": "OK",
+    "unknownError": "An unknown error occurred. Please try again."
+  },
+  
+  "farmerOtp": {
+    "enterOtp": "Enter OTP",
+    "sentTo": "We have sent an OTP to",
+    "confirm": "Confirm",
+    "noOtp": "Didn't receive OTP?",
+    "editPhone": "Edit Phone",
+    "noAccount": "No account found",
+    "pleaseSignup": "Please sign up first."
   },
   "farmerLogin": {
-    "title": "Farmer Log In",
-    "subtitle": "Log in into your Account",
-    "phonePlaceholder": "Phone number",
+    "title": "Farmer Login",
+    "subtitle": "Enter your mobile number to receive OTP",
+    "phonePlaceholder": "Enter phone number",
     "continue": "Continue",
     "noAccount": "Don't have an account?",
-    "signup": "Sign up"
-  },
-   "farmerOtp": {
-    "title": "Verify Your Phone",
-    "subtitle": "Enter the 6-digit OTP sent to your number",
-    "confirm": "Confirm",
-    "verifying": "Verifying...",
-    "incompleteOtp": "Please enter all 6 digits"
+    "signup": "Sign Up"
   },
   "otpSuccess": {
-    "title": "Success!",
-    "subtitle": "Your OTP has been verified successfully.",
+    "title": "Verification Successful!",
+    "subtitle": "Your phone number has been verified successfully.",
     "continue": "Continue"
   },
-  "otpFailure": {
-    "title": "Wrong!",
-    "subtitle": "Your OTP has not been verified. Try Again!!",
-    "retry": "Try Again"
+  "bottomTabs": {
+    "channels": "Channels",
+    "chat": "Chat",
+    "ai": "AI",
+    "updates": "Updates",
+    "scan": "Scan"
   },
-  "channels": {
-   "title": "Channels",
-  "searchPlaceholder": "Search channels...",
-  "following": "Following",
-  "discover": "Discover",
-  "noFollowed": "You are not following any channels yet.",
-  "noData": "No channels available to discover.",
-    "settings": "Settings"
-  },
-  "channelmsg": {
+ "channelsScreen": {
+    "title": "Channels",
+    "searchPlaceholder": "Search Channels",
+    "following": "Following",
+    "discover": "Discover",
+    "notFollowing": "You are not following any channels.",
+    "noChannels": "No channels to discover.",
     "follow": "Follow",
     "unfollow": "Unfollow",
-    "typeMessage": "Type a message",
-    "camera": "Camera",
-    "documents": "Documents",
-    "location": "Location",
-    "photos": "Photos",
-    "contact": "Contact"
-  },
-   "channelDescription": {
-    "totalMembers": "Total Members",
-    "dateCreated": "Date Created",
+    "errorLoad": "Failed to load channels",
+    "errorFollow": "Failed to follow channel",
+    "errorUnfollow": "Failed to unfollow channel",
+    "alertFollowTitle": "Follow Channel",
+    "alertFollowMsg": "You need to follow this channel to view messages.",
+    "cancel": "Cancel"},
+    "channelDescription": {
     "noDescription": "No description available",
-    "exitGroup": "Exit Group",
-    "reportGroup": "Report Group",
+    "createdAt": "Created At",
+    "report": "Report",
     "chatWithExpert": "Chat with Expert",
-    "exitConfirmation": "Are you sure you want to exit this group?",
-    "cancel": "Cancel",
-    "exit": "Exit"
+    "expertNotFound": "Expert not found!",
+    "failedLoadExpert": "Failed to load expert info."
   },
-  "chat": {
-    "title": "Chats",
-    "searchPlaceholder": "Search chats",
-    "chat1Name": "Sara"
-  },
-    "chatMsg": {
-    "unknown": "Unknown",
-    "typeMessage": "Type a message",
-    "camera": "Camera",
-    "documents": "Documents",
-    "location": "Location",
-    "photos": "Photos",
-    "contact": "Contact"
+ "chatHome": {
+    "authErrorTitle": "Authentication Error",
+    "authErrorMessage": "Please log in to access chat features.",
+    "authErrorOpenChatTitle": "Authentication Error",
+    "authErrorOpenChatMessage": "Please log in to start a chat.",
+    "noPhone": "No Phone",
+    "loadingChats": "Loading Chats...",
+    "chats": "Chats",
+    "searchPlaceholder": "Search users...",
+    "noChatsFound": "No chats found.",
+    "tryAdjustSearch": "Try adjusting your search term."
   },
   "chatDescription": {
+    "userNotFound": "User not found.",
+    "unknownUser": "Unknown User",
     "phone": "Phone",
-    "blockUser": "Block User",
+    "yearsExperience": "years experience",
     "reportUser": "Report User",
-    "blockConfirmation": "Are you sure you want to block this user?",
-    "cancel": "Cancel",
-    "block": "Block"
+    "errorFetching": "Error fetching user data:"
   },
-  "ai":{
-  "title": "AI",
-  "typeMessage": "Type a message"
-},
-"updates": {
-  "title": "Updates",
-  "search": "Search...",
-  "readMore": "Read More",
-  "tabs": {
-    "govt": "Govt Schemes",
-    "market": "Market Prices",
-    "crop": "Crop Info"
+  "aiChat": {
+    "title": "Plant Disease Detection",
+    "heading": "🌿 Identify Plant Disease  Instantly",
+    "uploadBtn": "Upload Leaf Image",
+    "detectBtn": "Detect Disease",
+    "selectImageTitle": "Select Image",
+    "selectImageMsg": "Please select an image first.",
+    "error": "Error",
+    "internetIssue": "Internet issue",
+    "detectionError": "Detection error:",
+    "plantDetection": "🌱 Plant Detection",
+    "detectedAsPlant": "Detected as Plant",
+    "yes": "Yes",
+    "no": "No",
+    "probability": "Probability",
+    "diseaseSuggestions": "💀 Disease Suggestions",
+    "confidence": "Confidence",
+    "noDescription": "No description available."
   },
-  "schemes": {
-    "subsidyTitle": "Fertilizer Subsidy"
+  "updates": {
+    "title": " Updates",
+    "untitled": "Untitled",
+    "officialUpdate": "Official Update",
+    "readMore": "Read More",
+    "fetchError": "Error fetching data:",
+    "tabs": {
+      "govt": "Government Schemes",
+      "crop": "Crop Info"
+    }
   },
-  "market": {
-    "marketTitle": "Tomato Prices"
-  },
-  "crop": {
-    "cropTitle": "Wheat Cultivation"
-  }
-},
   "govtReadMore": {
-    "title": "Government Scheme",
-    "schemeName": "PM-Kisan Samman Nidhi Yojana",
-    "description": "PM-Kisan provides income support to all landholding farmers' families to supplement their financial needs for procuring various inputs related to agriculture and allied activities as well as domestic needs.",
+    "title": "Scheme Details",
+    "untitled": "Untitled",
+    "noDescription": "No description available",
+    "region": "Region",
     "startDate": "Start Date",
     "endDate": "End Date",
-    "readMore": "Read More"
-  },
-  "price": {
-    "header": "Market Price",
-    "productName": "Wheat",
-    "price": "₹ 2,150 / Quintal",
-    "description": "Wheat is one of the most widely grown crops in India. Prices may vary depending on quality and location. This is the current market price for standard grade wheat.",
+    "notSpecified": "Not Specified",
     "readMore": "Read More"
   },
   "cropReadMore": {
-    "title": "Crop Details",
-    "name": "Wheat",
-    "price": "₹ 2,150 / Quintal",
-    "description": "Wheat is one of the most widely grown crops in India. It’s a staple food grain and plays a major role in the agricultural economy. Prices may vary depending on quality and region.",
-    "season": "Season: Rabi (Winter)",
-    "duration": "Duration: 120–150 days",
-    "water": "Water Requirement: Moderate (450–650 mm)",
-    "soil": "Soil Type: Well-drained loamy or clay-loam soil",
-    "readMore": "Read More"
+    "title": "Crop Info",
+    "cropName": "Crop Name",
+    "scientificName": "Scientific Name",
+    "marketPrice": "Market Price",
+    "season": "Season",
+    "duration": "Duration",
+    "waterRequirement": "Water",
+    "soilType": "Soil",
+    "yieldAmount": "Yield Amount",
+    "na": "N/A",
+    "readMore": "Read More",
+    "noLink": "No link available"
   },
-   "expertSignup": {
-    "title": "Expert Sign Up",
-    "subtitle": "Create an account to continue",
+ "settings": {
+    "title": "Settings",
+    "myAccount": "My Account",
+    "privacyPolicy": "Privacy Policy",
+    "language": "Language",
+    "logout": "Logout",
+    "logoutConfirm": "Are you sure you want to logout?",
+    "cancel": "Cancel",
+    "noName": "No Name",
+    "noPhone": "No Phone",
+    "realtimeFetchFailed": "Realtime fetch failed",
+    "logoutFailed": "Logout failed"
+  },
+"farmerMyaccount": {
+    "nameLabel": "Name",
+    "namePlaceholder": "Enter your name",
+    "phoneLabel": "Phone Number",
+    "phonePlaceholder": "Enter your phone number",
+    "saveBtn": "Save",
+    "noName": "No Name",
+    "success": "Success",
+    "error": "Error",
+    "profileUpdated": "Profile updated successfully!",
+    "profilePicUpdated": "Profile picture updated!",
+    "imageUploadFailed": "Image upload failed!",
+    "profileUpdateFailed": "Failed to update profile.",
+    "errorFetchingUser": "Error fetching user data"
+  },
+   "privacyPolicy": {
+    "userName": "No Name",
+    "userPhone": "No Phone",
+    "title1": "Introduction",
+    "desc1": "This privacy policy explains how we collect, use, and protect your information when you use our application.",
+    "title2": "Information Collection",
+    "desc2": "We may collect personal information such as name, phone number, and profile image to provide personalized services and support.",
+    "title3": "Use of Information",
+    "desc3": "Your information is used to improve the user experience, provide app features, and communicate important updates.",
+    "title4": "Data Sharing",
+    "desc4": "We do not sell or share your personal information with third parties without your consent, except as required by law.",
+    "title5": "Security",
+    "desc5": "We implement reasonable security measures to protect your data against unauthorized access or disclosure.",
+    "title6": "Changes to Policy",
+    "desc6": "We may update this policy periodically. Users will be notified of any significant changes.",
+    "copyright": "© 2025 Agriculture Assistant System. All rights reserved."
+  },
+"farmerFeedback": {
+    "reportUser": "Report User",
+    "reportChannel": "Report Channel",
+    "writeFeedbackPlaceholder": "Write your feedback here...",
+    "submit": "Submit",
+    "error": "Error",
+    "loginToReport": "Please login to report",
+    "selectStar": "Please select a star rating",
+    "writeFeedback": "Please write your feedback",
+    "success": "Success",
+    "thanks": "Thank you for your feedback",
+    "submitFailed": "Failed to submit feedback",
+    "noName": "No Name",
+    "noPhone": "No Phone"
+  },
+ "expertSignup": {
+    "title": "Expert Registration",
+    "subtitle": "Join our agriculture expert community and help farmers by sharing your knowledge.",
     "fullName": "Full Name",
     "qualification": "Qualification",
     "specialization": "Specialization",
-    "experience": "Years of Experience",
-    "phone": "Phone number",
-    "password": "Password",
+    "experience": "Experience (in years)",
+    "phone": "Phone Number",
     "continue": "Continue",
     "alreadyAccount": "Already have an account?",
-    "login": "Log in"
+    "login": "Login"
+  },
+  "errors": {
+    "fillAllFields": "Please fill in all fields before continuing.",
+    "error": "Error"
+  },
+  "expertOtp": {
+    "title": "Enter OTP",
+    "subtitle": "We have sent an OTP to {{phone}}",
+    "confirm": "Confirm",
+    "notReceived": "Didn't receive OTP?",
+    "editPhone": "Edit Phone",
+    "enterFullOtp": "Please enter the complete 6-digit OTP.",
+    "error": "Error"
   },
   "expertLogin": {
     "title": "Expert Login",
-    "phone": "Phone number",
-    "login": "Login",
-    "noAccount": "Dont have an account?",
-    "signup": "Sign Up"
+    "subtitle": "Enter your phone number to login",
+    "phonePlaceholder": "Phone Number",
+    "continue": "Continue",
+    "noAccount": "Don't have an account?",
+    "signup": "Sign Up",
+    "enterPhone": "Please enter your phone number.",
+    "error": "Error"
   },
-   "expertOtp": {
+  "otpScreen": {
     "title": "Enter OTP",
-    "subtitle": "We have sent a code to +XX XXXXXXXX",
-    "confirm": "Confirm"
+    "subtitle": "We have sent an OTP to",
+    "confirm": "Confirm",
+    "noOtp": "Didn't receive OTP?",
+    "editPhone": "Edit Phone",
+     "enterOtp": "Please enter the 6-digit OTP."
   },
-  "OtpFailure": {
-    "wrong": "Wrong!",
-    "notVerified": "Your OTP has not been verified. Try Again!!",
-    "tryAgain": "Try Again"
-  },
-  "OtpSuccess": {
-    "success": "Success!",
+  "expertloginSuccess": {
     "verified": "Your OTP has been verified successfully.",
     "continue": "Continue"
-  },
-"expertpasswordOtp": {
-    "title": "Enter OTP",
-    "subtitle": "We have sent a code to",
-    "confirm": "Confirm"
   },
   "otploginFailure": {
-    "wrong": "Wrong!",
-    "notVerified": "Your OTP has not been verified. Try Again!!",
-    "tryAgain": "Try Again"
+    "notverified": "Your OTP has not been verified. Try Again!!",
+    "tryagain": "Try Again"
   },
-    "expertloginSuccess": {
-    "success": "Success!",
-    "verified": " Congratulations! You have been successfully log In to your account",
-    "continue": "Continue"
+  "expertBottomTabs": {
+    "channels": "Channels",
+    "chat": "Chat",
+    "ai": "AI",
+    "updates": "Updates",
+    "scan": "Scan"
   },
-  "changePassword": {
-    "title": "Create New Password",
-    "newPassword": "New Password",
-    "confirmPassword": "Confirm Password",
-    "resetPassword": "Reset Password"
-  },
-   "loginotpSuccess": {
-    "success": "Success!",
-    "verified": "Your OTP has been verified successfully.",
-    "continue": "Continue"
-   },
-    "loginloginFailure": {
-    "wrong": "Wrong!",
-    "notVerified": "Your OTP has not been verified. Try Again!!",
-    "tryAgain": "Try Again"
-  },
-  "createChannel": {
+  "expertChannels": {
+  "channels": "Channels",
+  "searchChannels": "Search channels...",
+  "yourChannels": "Your Channels",
+  "following": "Following",
+  "discover": "Discover",
+  "noOwnChannels": "You haven’t created any channels yet.",
+  "noFollowing": "You are not following any channels yet.",
+  "noDiscover": "No channels to discover at the moment.",
+  "errorLoading": "Error loading channels: "
+},
+"createChannel": {
     "title": "Create Channel",
     "channelName": "Channel Name",
     "channelNamePlaceholder": "Enter channel name",
     "description": "Description",
     "descriptionPlaceholder": "Enter description",
     "upload": "Upload",
-    "createButton": "Create Channel"
-  },
-  "expertchannelDes":{
-  "totalMembers": "Total Members",
-  "dateCreated": "Date Created",
-  "noDescription": "No description available",
-  "exitGroup": "Exit Group",
-  "reportGroup": "Report Group",
-  "chatWithExpert": "Chat with Expert",
-  "exitConfirmation": "Are you sure you want to exit this group?",
-  "cancel": "Cancel",
-  "exit": "Exit"
-}
-,
-"expertchannelMsg":{
-  "unknown": "Unknown",
-  "follow": "Follow",
-  "typeMessage": "Type a message",
-  "camera": "Camera",
-  "documents": "Documents",
-  "location": "Location",
-  "photos": "Photos",
-  "contact": "Contact"
- 
-},
-"expertChannels": {
-    "channels": "Channels",
-    "searchChannels": "Search channels",
-    "yourChannels": "Your Channels",
-    "farmingTips": "Farming Tips",
-    "dailyTips": "Daily tips for farmers",
-    "agriNews": "Agri News",
-    "latestNews": "Latest agriculture news",
-    "myFarmingChannel": "My Farming Channel",
-  "personalChannel": "Your personal channel",
-  "following": "Following",
-  "discover": "Discover"
-  },
-  
-"ownchannelDes":{
-  "edit": "Edit",
-  "channelName": "Channel Name",
-  "channelDescription": "Channel Description",
-  "totalMembers": "Total Members",
-  "addMember": "Add Member",
-  "saveChanges": "Save Changes"
-},
-"ownchannelMsg":{
-  "unknown": "Unknown",
-  "typeMessage": "Type a message",
-  "camera": "Camera",
-  "documents": "Documents",
-  "location": "Location",
-  "photos": "Photos",
-  "contact": "Contact"
-},
-"expertChat": {
-    "title": "Chats",
-    "searchChats": "Search chats",
-    "chatName": "Sara"},
-    "expertChatMsg": {
-    "unknown": "Unknown",
-    "typeMessage": "Type a message",
+    "createButton": "Create",
+    "selectImage": "Select Image",
     "camera": "Camera",
-    "documents": "Documents",
-    "location": "Location",
-    "photos": "Photos",
-    "contact": "Contact"
+    "gallery": "Gallery",
+    "cancel": "Cancel",
+    "error": "Error",
+    "requiredFields": "Channel name and description are required.",
+    "errorUploading": "Failed to create channel."
+  },
+  "ownchannelDes": {
+    "loadingChannel": "Loading Channel...",
+    "uploading": "Uploading...",
+    "edit": "Edit Image",
+    "channelName": "Channel Name",
+    "channelDescription": "Channel Description",
+    "createdBy": "Created By",
+    "saveChanges": "Save Changes",
+    "missingId": "Channel ID missing!",
+      "channelNotFound": "Channel not found!",
+      "fetchError": "Could not fetch channel info.",
+      "updateSuccess": "Channel info updated!",
+      "updateError": "Failed to update channel info.",
+      "uploadSuccess": "Channel image updated!",
+      "uploadError": "Failed to update image.",
+      "unnamedChannel": "Unnamed Channel",
+      "confirmDeleteTitle": "Delete Channel?",
+  "confirmDeleteMsg": "Are you sure you want to permanently delete this channel?",
+  "deleteChannel": "Delete Channel",
+  "deleteSuccess": "Channel deleted successfully!",
+  "deleteError": "Failed to delete channel!",
+  "cancel": "Cancel",
+  "delete": "Delete"
+  },
+  "channelDes": {
+    "expertNotFound": "Expert not found",
+    "expertLoadError": "Failed to load expert data",
+    "chatWithExpert": "Chat with Expert",
+    "report": "Report",
+    "noDescription": "No description available",
+    "createdAt": "Created at",
+    "noFeedbackTarget": "No user or channel to report"
+  },
+ "expertChat": {
+    "authErrorTitle": "Authentication Error",
+    "authErrorMessage": "Please log in to access chat features.",
+    "fetchError": "Error fetching all users.",
+    "userRoleError": "Error fetching user role.",
+    "authErrorStart": "Please log in to start a chat.",
+    "loading": "Loading Chats...",
+    "headerTitle": "Chats",
+    "searchPlaceholder": "Search users...",
+    "noChats": "No chats found.",
+    "adjustSearch": "Try adjusting your search term."
   },
   "expertChatDes": {
-    "blockUser": "Block User",
+    "errorTitle": "Error",
+    "errorMessage": "Failed to load user information.",
+    "userNotFound": "User not found or ID missing.",
+    "unknownUser": "Unknown User",
+    "na": "N/A",
+    "phoneLabel": " Phone: ",
+    "reportUser": "Report User"
+  },
+  "exsettings": {
+    "title": "Settings",
+    "name": "Expert Name",
+    "myAccount": "My Account",
+    "privacyPolicy": "Privacy Policy",
+    "language": "Language",
+    "feedback": "Feedback",
+    "logout": "Logout",
+    "logoutModalTitle": "Are you sure you want to logout?",
+    "logoutModalMessage": "Logging out will end your current session. You can log back in anytime.",
+    "cancel": "Cancel"
+  },
+  "exmyacc": {
+    "noName": "No Name",
+    "name": "Name",
+    "enterName": "Enter name",
+    "phoneNumber": "Phone Number",
+    "enterPhone": "Enter phone",
+    "qualification": "Qualification",
+    "enterQualification": "Enter qualification",
+    "specialization": "Specialization",
+    "enterSpecialization": "Enter specialization",
+    "experience": "Experience",
+    "enterExperience": "Enter experience",
+    "save": "Save",
+    "errorFetching": "Error fetching expert data",
+    "failedToLoad": "Failed to load expert data.",
+    "imageUploadFailed": "Image upload failed!",
+    "success": "Success",
+    "profileUpdated": "Profile updated successfully!",
+    "updateError": "Failed to update profile.",
+    "error": "Error"
+  },
+     "exFeedback": {
+    "error": "Error",
+    "loginToReport": "Please login to submit feedback",
+    "selectStar": "Please select a rating",
+    "writeFeedback": "Please write your feedback",
+    "submitFailed": "Failed to submit feedback. Try again!",
+    "success": "Success",
+    "thanks": "Thank you for your feedback!",
+    "noUser": "No user or channel found",
+    "noName": "No name available",
+    "noPhone": "No phone number available",
+    "feedback": "Feedback",
+    "writeFeedbackPlaceholder": "Write your feedback here...",
+    "submit": "Submit",
     "reportUser": "Report User",
-    "blockConfirm": "Are you sure you want to block this user?",
-    "cancel": "Cancel",
-    "block": "Block",
-    "phone": "Phone"
-  },
-"expertAi":{
-  "title": "AI",
-  "typeMessage": "Type a message"
-},
-"expertUpdates": {
-  "title": "Updates",
-  "search": "Search...",
-  "ereadMore": "Read More",
-  "etabs": {
-    "govt": "Govt Schemes",
-    "market": "Market Prices",
-    "crop": "Crop Info"
-  },
-  "eschemes": {
-    "subsidyTitle": "Fertilizer Subsidy"
-  },
-  "emarket": {
-    "marketTitle": "Tomato Prices"
-  },
-  "ecrop": {
-    "cropTitle": "Wheat Cultivation"
+    "reportChannel": "Report Channel"
   }
-},
-"expertGovt": {
-    "title": "Government Scheme",
-    "schemeName": "PM-Kisan Samman Nidhi Yojana",
-    "description": "PM-Kisan provides income support to all landholding farmers' families to supplement their financial needs for procuring various inputs related to agriculture and allied activities as well as domestic needs.",
-    "startDate": "Start Date:",
-    "endDate": "End Date:",
-    "readMore": "Read More"
-  },
-  "expertMarket": {
-    "title": "Market Price",
-    "productName": "Wheat",
-    "price": "₹ 2,150 / Quintal",
-    "description": "Wheat is one of the most widely grown crops in India. Prices may vary depending on quality and location. This is the current market price for standard grade wheat.",
-    "readMore": "Read More"
-  },
-  "expertCrop": {
-    "title": "Crop Details",
-    "productName": "Wheat",
-    "price": "₹ 2,150 / Quintal",
-    "description": "Wheat is one of the most widely grown crops in India. It’s a staple food grain and plays a major role in the agricultural economy. Prices may vary depending on quality and region.",
-    "season": "Season: Rabi (Winter)",
-    "duration": "Duration: 120–150 days",
-    "waterRequirement": "Water Requirement: Moderate (450–650 mm)",
-    "soilType": "Soil Type: Well-drained loamy or clay-loam soil",
-    "readMore": "Read More"
-  },
- "settings": {
-    "title": "Settings",
-        "name":"Sara",
-    "restartTitle": "Restart Required",
-    "restartMsg": "Please restart the app to apply changes.",
-    "chooseLanguage": "Choose Language",
-    "myAccount": "My Account",
-    "privacyPolicy": "Privacy Policy",
-    "language": "Language",
-    "feedback": "Feedback",
-    "logout": "Logout",
-    "logoutModalTitle": "Logout?",
-    "logoutModalMessage": "Are you sure you want to logout?",
-    "cancel": "Cancel"
-  },
-   "exsettings": {
-    "title": "Settings",
-        "name":"Sara",
-    "restartTitle": "Restart Required",
-    "restartMsg": "Please restart the app to apply changes.",
-    "chooseLanguage": "Choose Language",
-    "myAccount": "My Account",
-    "privacyPolicy": "Privacy Policy",
-    "language": "Language",
-    "feedback": "Feedback",
-    "logout": "Logout",
-    "logoutModalTitle": "Logout?",
-    "logoutModalMessage": "Are you sure you want to logout?",
-    "cancel": "Cancel"
-  },
-  "expertMyaccount":{
-  "myAccount": "My Account",
-  "edit": "Edit",
-  "name": "Name",
-  "enterName": "Enter your name",
-  "phoneNumber": "Phone Number",
-  "enterPhone": "Enter your phone number",
-  "qualification": "Qualification",
-  "enterQualification": "Enter your qualification",
-  "specialization": "Specialization",
-  "enterSpecialization": "Enter your specialization",
-  "experience": "Years of Experience",
-  "enterExperience": "Enter years of experience",
-  "save": "Save"
-},
-"farmerMyAccount": {
-    "farmerName": "Sara",
-    "farmerPhone": "+123 456 7890",
-    "nameLabel": "Name",
-    "namePlaceholder": "Enter your name",
-    "phoneLabel": "Phone Number",
-    "phonePlaceholder": "Enter your phone number",
-   "saveBtn": "Save"
-  },
-  "privacyPolicy": {
-    "userName": "Sara",
-    "userPhone": "+123 456 7890",
-    "title1": "1. Introduction",
-    "desc1": "Welcome to the Agriculture Assistant System. We value and respect your privacy, and we are committed to safeguarding your personal information. This Privacy Policy outlines the methods we employ to collect, process, and secure your data in accordance with applicable laws and best practices.",
-    
-    "title2": "2. Information We Collect",
-    "desc2": "We may collect personal information including, but not limited to, your name, contact number, geographical location, and farming preferences. This data is essential for providing you with tailored recommendations and enhanced agricultural services.",
 
-    "title3": "3. How We Use Your Information",
-    "desc3": "Your information is utilized exclusively for delivering AI-driven agricultural assistance, updates regarding government schemes, real-time market price alerts, and access to farming community discussions.",
+ 
 
-    "title4": "4. Data Protection",
-    "desc4": "We implement advanced encryption techniques and utilize Firebase Authentication to safeguard your account credentials and personal data from unauthorized access or misuse.",
-
-    "title5": "5. Contact Us",
-    "desc5": "Should you have any queries or concerns regarding this Privacy Policy, please reach out to us through the in-app support section or via our official contact channels.",
-
-    "copyright": "© 2025 Agriculture Assistant System. All rights reserved."
-  },
-   "languagePage": {
-    "userName": "Sara",
-    "userPhone": "+123 456 7890",
-    "title": "Select Language",
-    "english": "English",
-    "urdu": "Urdu"
-  },
-  "feedback": {
-    "userName": "Sara",
-    "userPhone": "+123 456 7890",
-    "title": "Feedback",
-    "placeholder": "Write your feedback...",
-    "submit": "Submit"
-  },
-  "bottomTabs": {
-    "channels": "Channels",
-    "chats": "Chats",
-    "ai": "AI",
-    "updates": "Updates"
-  },
-  "expertBottomTabs": {
-    "channels": "Channels",
-    "chat": "Chat",
-    "ai": "AI",
-    "updates": "Updates"
-  }
-    
 
 }

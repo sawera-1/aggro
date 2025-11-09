@@ -1,10 +1,24 @@
-import React from 'react';
-import { ScrollView, Text, Image, TouchableOpacity, ImageBackground } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, Text, Image, TouchableOpacity, ImageBackground, View, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import i18next from '../i18n';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Languagepg = ({ navigation }) => {
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+
+  const changeLanguage = (lang) => {
+    i18next.changeLanguage(lang);
+    const languageText = lang === 'en' ? 'English' : 'اردو';
+    setSelectedLanguage(languageText);
+
+    // Show alert
+    Alert.alert(
+      lang === 'en' ? 'Language selected' : 'زبان منتخب کی گئی',
+      lang === 'en' ? 'Language selected as English' : 'آپ نے اردو زبان کو منتخب کر لیا ہے'
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
@@ -49,9 +63,7 @@ const Languagepg = ({ navigation }) => {
 
           {/* English Button */}
           <TouchableOpacity
-            onPress={() => {
-              i18next.changeLanguage('en');
-            }}
+            onPress={() => changeLanguage('en')}
             style={{
               backgroundColor: '#006644',
               height: 48,
@@ -67,9 +79,7 @@ const Languagepg = ({ navigation }) => {
 
           {/* Urdu Button */}
           <TouchableOpacity
-            onPress={() => {
-              i18next.changeLanguage('ur');
-            }}
+            onPress={() => changeLanguage('ur')}
             style={{
               backgroundColor: '#006644',
               height: 48,
@@ -81,6 +91,15 @@ const Languagepg = ({ navigation }) => {
           >
             <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: 'bold' }}>اردو</Text>
           </TouchableOpacity>
+
+          {/* Display Selected Language */}
+          {selectedLanguage ? (
+            <View style={{ marginTop: 30 }}>
+              <Text style={{ fontSize: 20, fontWeight: '600', color: '#006644' }}>
+                Selected Language: {selectedLanguage}
+              </Text>
+            </View>
+          ) : null}
         </ScrollView>
       </ImageBackground>
     </SafeAreaView>

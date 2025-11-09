@@ -11,42 +11,33 @@ import {
     SafeAreaView,
     Alert,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-
-// Helper function to get the canonical chat ID
 const getChatId = (uid1, uid2) => (uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`);
-
-// --- Dummy Image Imports (Adjust paths as necessary) ---
-// NOTE: These paths MUST be correct for your project structure.
 const FarmerImage = require('../../../images/Farmerimg.png');
 const ExpertImage = require('../../../images/Expertimg.png');
 const DummyImage = require('../../../images/chdummyimg.png');
 
 export default function ExpertChat({ navigation }) {
     const [currentUser, setCurrentUser] = useState(null);
-    const [chatPartners, setChatPartners] = useState([]); // Will store users with existing chats
-    const [allUsers, setAllUsers] = useState({}); // Map of UID -> User Data for quick lookup
+    const [chatPartners, setChatPartners] = useState([]); 
+    const [allUsers, setAllUsers] = useState({}); 
     const [searchQuery, setSearchQuery] = useState('');
     const [unreadCounts, setUnreadCounts] = useState({});
     const [loading, setLoading] = useState(true);
-
-    // Get default image based on user role
+    const { t } = useTranslation();
     const getDefaultImage = (role) => {
         if (role === 'farmer') return FarmerImage;
         if (role === 'expert') return ExpertImage;
         return DummyImage;
     };
 
-    /**
-     * ## 1. Fetch Current User, Role, and All Potential Users
-     * Fetches logged-in user details and all potential chat partners based on role.
-     */
     useEffect(() => {
         const user = auth().currentUser;
         if (!user) {
-            Alert.alert('Authentication Error', 'Please log in to access chat features.');
+           Alert.alert(t('expertChat.authErrorTitle'), t('expertChat.authErrorMessage'));
             setLoading(false);
             return;
         }
@@ -94,11 +85,6 @@ export default function ExpertChat({ navigation }) {
         return () => unsubscribeUser();
     }, []);
 
-    /**
-     * ## 2. Fetch Chat Partners and Unread Counts
-     * Listens to the 'chats' collection to identify partners with existing messages.
-     * Then sets up real-time listeners for unread counts for *only* those partners.
-     */
     useEffect(() => {
         if (!currentUser?.uid || Object.keys(allUsers).length === 0) return;
 
@@ -106,16 +92,6 @@ export default function ExpertChat({ navigation }) {
         const potentialPartnerUids = Object.keys(allUsers);
         const unreadUnsubscribes = [];
 
-        // Identify partners based on existing chats (simulated by checking if the chat ID exists)
-        // Note: Firestore doesn't allow querying for document IDs in a collection directly,
-        // so we rely on the logic in section 3 to determine partners by unread counts/messages.
-        // The most robust way to find *all* chat partners in Firestore without complex database changes 
-        // is to check the `messages` subcollection.
-
-        // --- Simplified Partner Discovery & Unread Count Listener Setup ---
-        // Instead of querying 'chats' collection (which might require complex security rules/indexes),
-        // we iterate through *all* potential partners and check for unread messages. 
-        // A non-zero unread count implies an existing chat.
 
         const setupPartnerListeners = () => {
             const tempUnsubscribes = [];
@@ -187,11 +163,6 @@ export default function ExpertChat({ navigation }) {
         };
     }, [currentUser?.uid, allUsers]);
 
-
-    /**
-     * ## 3. Search and Filtering Logic
-     * Filters the `chatPartners` list based on the search query.
-     */
     const filteredUsers = useMemo(() => {
         if (!searchQuery) {
             // Sort partners by unread count descending for prominence
@@ -212,7 +183,7 @@ export default function ExpertChat({ navigation }) {
      */
     const openChat = useCallback((secondUser) => {
         if (!currentUser?.uid) {
-            Alert.alert('Authentication Error', 'Please log in to start a chat.');
+           Alert.alert(t('expertChat.authErrorTitle'), t('expertChat.authErrorMessage'));
             return;
         }
 
@@ -260,7 +231,7 @@ export default function ExpertChat({ navigation }) {
     if (loading || !currentUser) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text>Loading Chats...</Text>
+                <Text>{t('expertChat.loading')}</Text>
             </View>
         );
     }
@@ -274,7 +245,7 @@ export default function ExpertChat({ navigation }) {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.title}>Chats</Text>
+                    <Text style={styles.title}>{t('expertChat.headerTitle')}</Text>
                     <TouchableOpacity onPress={() => navigation.navigate('ExpertSettingsStack')}>
                         <Icon name="settings" size={26} color="#031501ff" />
                     </TouchableOpacity>
@@ -284,8 +255,8 @@ export default function ExpertChat({ navigation }) {
                 <View style={styles.searchContainer}>
                     <Icon name="search" size={20} color="#888" />
                     <TextInput
-                        placeholder="Search users..."
-                        placeholderTextColor="#888"
+                    placeholder={t('expertChat.searchPlaceholder')} 
+                       placeholderTextColor="#888"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         style={styles.searchInput}
@@ -299,9 +270,9 @@ export default function ExpertChat({ navigation }) {
                     keyExtractor={(item) => item.uid}
                     ListEmptyComponent={() => (
                         <View style={{ padding: 20, alignItems: 'center' }}>
-                            <Text style={{ color: '#555' }}>No chats found.</Text>
+                            <Text style={{ color: '#555' }}>{t('expertChat.noChats')}</Text>
                             {searchQuery.length > 0 && (
-                                <Text style={{ color: '#555' }}>Try adjusting your search term.</Text>
+                                <Text style={{ color: '#555' }}>{t('expertChat.adjustSearch')}</Text>
                             )}
                         </View>
                     )}

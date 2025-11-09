@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Image, ScrollView, ImageBackground, Activ
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getUserData } from '../Helper/firebaseHelper'; // import your helper
+import { getUserData } from '../Helper/firebaseHelper';
 
 export default function PrivacyPolicy({ navigation }) {
   const { t } = useTranslation();
@@ -31,6 +31,15 @@ export default function PrivacyPolicy({ navigation }) {
       </SafeAreaView>
     );
   }
+
+  const sections = [
+    { title: t('privacyPolicy.title1'), desc: t('privacyPolicy.desc1') },
+    { title: t('privacyPolicy.title2'), desc: t('privacyPolicy.desc2') },
+    { title: t('privacyPolicy.title3'), desc: t('privacyPolicy.desc3') },
+    { title: t('privacyPolicy.title4'), desc: t('privacyPolicy.desc4') },
+    { title: t('privacyPolicy.title5'), desc: t('privacyPolicy.desc5') },
+    { title: t('privacyPolicy.title6'), desc: t('privacyPolicy.desc6') },
+  ];
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -60,21 +69,12 @@ export default function PrivacyPolicy({ navigation }) {
 
         {/* Privacy Policy Content */}
         <ScrollView contentContainerStyle={{ padding: 15 }}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 15, marginBottom: 5 }}>
-            {t('privacyPolicy.title1')}
-          </Text>
-          <Text style={{ fontSize: 15, lineHeight: 22, color: '#444' }}>
-            {t('privacyPolicy.desc1')}
-          </Text>
-
-          <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 15, marginBottom: 5 }}>
-            {t('privacyPolicy.title2')}
-          </Text>
-          <Text style={{ fontSize: 15, lineHeight: 22, color: '#444' }}>
-            {t('privacyPolicy.desc2')}
-          </Text>
-
-          {/* ... rest of the policy sections ... */}
+          {sections.map((section, index) => (
+            <View key={index} style={{ marginBottom: 15 }}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 5 }}>{section.title}</Text>
+              <Text style={{ fontSize: 15, lineHeight: 22, color: '#444' }}>{section.desc}</Text>
+            </View>
+          ))}
 
           <Text style={{ fontSize: 13, color: '#000', textAlign: 'center', marginTop: 20, paddingVertical: 20 }}>
             {t('privacyPolicy.copyright')}

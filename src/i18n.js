@@ -1,34 +1,38 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { I18nManager } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import en from "./locales/en.json";
 import ur from "./locales/ur.json";
 
-i18n.use(initReactI18next).init({
-  compatibilityJSON: "v3",
-  resources: {
-    en: { translation: en },
-    ur: { translation: ur },
-  },
-  lng: "en", // default language
-  fallbackLng: "en",
-  interpolation: {
-    escapeValue: false,
-  },
-});
+const initI18n = async () => {
+  const savedLang = await AsyncStorage.getItem("selectedLanguage");
+  const defaultLang = savedLang || "en";
 
-// Enable RTL for Urdu
-if (i18n.language === "ur") {
-  if (!I18nManager.isRTL) {
-    I18nManager.allowRTL(true);
-    I18nManager.forceRTL(true);
-  }
-} else {
+  await i18n
+    .use(initReactI18next)
+    .init({
+      compatibilityJSON: "v3",
+      resources: {
+        en: { translation: en },
+        ur: { translation: ur },
+      },
+      lng: defaultLang,
+      fallbackLng: "en",
+      interpolation: {
+        escapeValue: false,
+      },
+    });
+
+  // ✅ Keep layout always LTR (no flipping for Urdu)
+  // But Urdu text will still appear RTL naturally.
   if (I18nManager.isRTL) {
     I18nManager.allowRTL(false);
     I18nManager.forceRTL(false);
   }
-}
+};
+
+initI18n();
 
 export default i18n;

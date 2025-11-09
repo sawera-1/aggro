@@ -21,11 +21,11 @@ export default function GovtReadMore({ navigation, route }) {
   // 🔊 Speak function
   const speakEnglish = () => {
     const details = `
-      ${scheme.name || "Untitled"}.
-      ${scheme.description || "No description available"}.
-      Region: ${scheme.region || "Not Specified"}.
-      Start Date: ${scheme.startDate || "N/A"}.
-      End Date: ${scheme.endDate || "N/A"}.
+      ${scheme.name || t('govtReadMore.untitled')}.
+      ${scheme.description || t('govtReadMore.noDescription')}.
+      ${t('govtReadMore.region')}: ${scheme.region || t('govtReadMore.notSpecified')}.
+      ${t('govtReadMore.startDate')}: ${scheme.startDate || "N/A"}.
+      ${t('govtReadMore.endDate')}: ${scheme.endDate || "N/A"}.
     `;
 
     Tts.stop();
@@ -100,29 +100,29 @@ export default function GovtReadMore({ navigation, route }) {
 
             {/* Name */}
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#006644', marginBottom: 6 }}>
-              {scheme.name || "Untitled"}
+              {scheme.name || t('govtReadMore.untitled')}
             </Text>
 
             {/* Description */}
             <Text style={{ fontSize: 15, lineHeight: 22, color: '#555', marginBottom: 12 }}>
-              {scheme.description || "No description available"}
+              {scheme.description || t('govtReadMore.noDescription')}
             </Text>
 
             {/* Region */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>Region: </Text>
-              {scheme.region || "Not Specified"}
+              <Text style={{ fontWeight: 'bold' }}>{t('govtReadMore.region')}: </Text>
+              {scheme.region || t('govtReadMore.notSpecified')}
             </Text>
 
             {/* Start Date */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>Start Date: </Text>
+              <Text style={{ fontWeight: 'bold' }}>{t('govtReadMore.startDate')}: </Text>
               {scheme.startDate || "N/A"}
             </Text>
 
             {/* End Date */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>End Date: </Text>
+              <Text style={{ fontWeight: 'bold' }}>{t('govtReadMore.endDate')}: </Text>
               {scheme.endDate || "N/A"}
             </Text>
 

@@ -66,7 +66,7 @@ export default function ExpertBottomTabs() {
   name="AiTab"
   component={ExpertAI}
   options={{
-    tabBarLabel: t('bottomTabs.scan'), // label like "Scan" or "Plant Scan"
+    tabBarLabel: t('expertBottomTabs.scan'), // label like "Scan" or "Plant Scan"
     tabBarStyle: {
       display: 'none', // hide tab bar when this screen is open
       backgroundColor: '#006644',

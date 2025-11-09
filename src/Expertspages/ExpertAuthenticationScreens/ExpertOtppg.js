@@ -13,11 +13,13 @@ import {
 import { verifyExpertOtpAndSaveUser } from "../../Helper/firebaseHelper";
 import NumericPad from "../../Components/Numericpad";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 const ExpertSignupOtp = ({ navigation, route }) => {
   const { phone, confirmation, expertData } = route.params;
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const handlePress = (num) => {
     if (otp.length < 6) setOtp((prev) => prev + num);
@@ -26,7 +28,7 @@ const ExpertSignupOtp = ({ navigation, route }) => {
   const handleBackspace = () => setOtp((prev) => prev.slice(0, -1));
 
   const handleConfirm = async () => {
-    if (otp.length < 6) return Alert.alert("Error", "Enter full OTP");
+    if (otp.length < 6) return Alert.alert(t("expertOtp.error"), t("expertOtp.enterFullOtp"));
     try {
       setLoading(true);
       await verifyExpertOtpAndSaveUser(confirmation, otp, expertData);
@@ -61,15 +63,37 @@ const ExpertSignupOtp = ({ navigation, route }) => {
           />
 
           {/* Title */}
-          <Text style={{ fontSize: 28, fontWeight: "bold", color: "#006644", marginBottom: 10, textAlign: "center" }}>
-            Enter OTP
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: "bold",
+              color: "#006644",
+              marginBottom: 10,
+              textAlign: "center",
+            }}
+          >
+            {t("expertOtp.title")}
           </Text>
-          <Text style={{ fontSize: 14, color: "#006644", marginBottom: 25, textAlign: "center" }}>
-            We have sent an OTP to {phone}
+          <Text
+            style={{
+              fontSize: 14,
+              color: "#006644",
+              marginBottom: 25,
+              textAlign: "center",
+            }}
+          >
+            {t("expertOtp.subtitle", { phone })}
           </Text>
 
           {/* OTP line inputs */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", width: "80%", marginBottom: 30 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: "80%",
+              marginBottom: 30,
+            }}
+          >
             {[...Array(6)].map((_, i) => (
               <TextInput
                 key={i}
@@ -89,12 +113,9 @@ const ExpertSignupOtp = ({ navigation, route }) => {
           </View>
 
           {/* Numeric pad */}
-          <NumericPad
-            onPressNumber={handlePress}
-            onBackspace={handleBackspace}
-          />
+          <NumericPad onPressNumber={handlePress} onBackspace={handleBackspace} />
 
-          {/* Confirm button */}
+          {/* Confirm button with loading */}
           <TouchableOpacity
             onPress={handleConfirm}
             disabled={loading}
@@ -112,19 +133,26 @@ const ExpertSignupOtp = ({ navigation, route }) => {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
-                Confirm
+                {t("expertOtp.confirm")}
               </Text>
             )}
           </TouchableOpacity>
 
-          {/* Resend or Edit phone option */}
-          <Text style={{ color: "#006644", marginTop: 15, fontSize: 14, textAlign: "center" }}>
-            Didn't receive OTP?{" "}
+          {/* Resend or Edit phone */}
+          <Text
+            style={{
+              color: "#006644",
+              marginTop: 15,
+              fontSize: 14,
+              textAlign: "center",
+            }}
+          >
+            {t("expertOtp.notReceived")}{" "}
             <Text
               style={{ fontWeight: "bold", fontSize: 16 }}
               onPress={() => navigation.goBack()}
             >
-              Edit Phone
+              {t("expertOtp.editPhone")}
             </Text>
           </Text>
         </ScrollView>

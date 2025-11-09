@@ -8,13 +8,17 @@ import {
   ImageBackground,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import CountryPicker from "react-native-country-picker-modal";
 import { sendOtp } from "../../Helper/firebaseHelper";
 import NumericPad from "../../Components/Numericpad";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 const ExpertLogin = ({ navigation }) => {
+  const { t } = useTranslation();
+
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState("PK");
   const [callingCode, setCallingCode] = useState("92");
@@ -28,7 +32,10 @@ const ExpertLogin = ({ navigation }) => {
   const handleBackspace = () => setPhone((prev) => prev.slice(0, -1));
 
   const handleLogin = async () => {
-    if (!phone) return Alert.alert("Enter phone");
+    if (!phone) {
+      return Alert.alert(t("expertLogin.enterPhone"));
+    }
+
     const fullPhone = `+${callingCode}${phone.replace(/^0+/, "")}`;
 
     try {
@@ -36,7 +43,7 @@ const ExpertLogin = ({ navigation }) => {
       const confirmation = await sendOtp(fullPhone);
       navigation.navigate("ExpertloginOtp", { phone: fullPhone, confirmation });
     } catch (e) {
-      Alert.alert(e.message);
+      Alert.alert(t("expertLogin.error"), e.message);
     } finally {
       setLoading(false);
     }
@@ -72,8 +79,9 @@ const ExpertLogin = ({ navigation }) => {
               marginBottom: 10,
             }}
           >
-            Expert Login
+            {t("expertLogin.title")}
           </Text>
+
           <Text
             style={{
               fontSize: 14,
@@ -82,7 +90,7 @@ const ExpertLogin = ({ navigation }) => {
               textAlign: "center",
             }}
           >
-            Enter your phone number to login
+            {t("expertLogin.subtitle")}
           </Text>
 
           {/* Phone input */}
@@ -103,13 +111,12 @@ const ExpertLogin = ({ navigation }) => {
             </Text>
             <TextInput
               value={phone}
-              onChangeText={setPhone} 
+              onChangeText={setPhone}
               keyboardType="phone-pad"
               style={{ flex: 1, fontSize: 16, color: "#006644" }}
-              placeholder="Phone Number"
+              placeholder={t("expertLogin.phonePlaceholder")}
               placeholderTextColor="#006644"
             />
-
           </View>
 
           {/* Numeric pad */}
@@ -124,20 +131,24 @@ const ExpertLogin = ({ navigation }) => {
           {/* Login button */}
           <TouchableOpacity
             onPress={handleLogin}
-            style={styles.button}
+            style={[styles.button, loading && { opacity: 0.7 }]}
             disabled={loading}
           >
-            <Text style={styles.buttonText}>Continue</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" style={{ paddingVertical: 12 }} />
+            ) : (
+              <Text style={styles.buttonText}>{t("expertLogin.continue")}</Text>
+            )}
           </TouchableOpacity>
 
-          {/* Don't have an account? Sign Up */}
+          {/* Sign Up */}
           <Text style={{ color: "#006644", marginTop: 10 }}>
-            Don't have an account?{" "}
+            {t("expertLogin.noAccount")}{" "}
             <Text
               style={{ fontWeight: "bold", fontSize: 16 }}
               onPress={() => navigation.navigate("ExpertSignup")}
             >
-              Sign Up
+              {t("expertLogin.signup")}
             </Text>
           </Text>
         </ScrollView>

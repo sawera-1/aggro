@@ -8,45 +8,57 @@ import {
   ScrollView,
   Alert,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import CountryPicker from "react-native-country-picker-modal";
 import { sendOtp } from "../../Helper/firebaseHelper";
-import NumericPad from "../../Components/Numericpad"; 
+import NumericPad from "../../Components/Numericpad";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 const FarmerSignup = ({ navigation }) => {
   const { t } = useTranslation();
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState("PK");
   const [callingCode, setCallingCode] = useState("92");
-  const [showPad, setShowPad] = useState(false);
+  const [loading, setLoading] = useState(false); // Loading state
 
-  // numeric pad handlers
+  // Numeric pad handlers
   const handlePress = (num) => {
-    if (phone.length < 11) setPhone((prev) => prev + num);
+    if (!loading && phone.length < 11) setPhone((prev) => prev + num);
   };
 
   const handleBackspace = () => {
-    setPhone((prev) => prev.slice(0, -1));
+    if (!loading) setPhone((prev) => prev.slice(0, -1));
   };
 
+  // Signup handler with translated alerts
   const handleSignup = async () => {
+    if (loading) return; // Prevent multiple presses
     if (!phone) {
-      Alert.alert("Error", "Please enter a valid phone number");
+      Alert.alert(t("alerts.errorTitle"), t("alerts.enterPhone"));
+      return;
+    }
+    if (phone.length < 10) {
+      Alert.alert(t("alerts.errorTitle"), t("alerts.invalidPhone"));
       return;
     }
 
     try {
+      setLoading(true);
       const fullPhone = `+${callingCode}${phone}`;
       const confirmation = await sendOtp(fullPhone);
 
+      // Navigate to OTP screen
       navigation.navigate("FarmerOtp", {
         confirmation,
         phone: fullPhone,
         mode: "signup",
       });
     } catch (error) {
-      Alert.alert("Error", error.message);
+      Alert.alert(t("alerts.errorTitle"), error.message || t("alerts.unknownError"));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,7 +85,14 @@ const FarmerSignup = ({ navigation }) => {
           />
 
           {/* Title */}
-          <Text style={{ fontSize: 28, fontWeight: "bold", color: "#006644", marginBottom: 10 }}>
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: "bold",
+              color: "#006644",
+              marginBottom: 10,
+            }}
+          >
             {t("farmerSignup.title")}
           </Text>
           <Text
@@ -87,7 +106,7 @@ const FarmerSignup = ({ navigation }) => {
             {t("farmerSignup.subtitle")}
           </Text>
 
-          {/* Country Picker + Phone Display */}
+          {/* Country Picker + Phone Input */}
           <View
             style={{
               flexDirection: "row",
@@ -121,7 +140,7 @@ const FarmerSignup = ({ navigation }) => {
               placeholder={t("farmerSignup.phonePlaceholder")}
               placeholderTextColor="#006644"
               value={phone}
-              editable={false} // ✅ Only editable via numeric pad
+              editable={false} // Controlled by numeric pad
               style={{ flex: 1, fontSize: 20, color: "#006644" }}
             />
           </View>
@@ -136,6 +155,7 @@ const FarmerSignup = ({ navigation }) => {
           {/* Continue Button */}
           <TouchableOpacity
             onPress={handleSignup}
+            disabled={loading}
             style={{
               width: "100%",
               borderRadius: 10,
@@ -143,30 +163,34 @@ const FarmerSignup = ({ navigation }) => {
               alignItems: "center",
               marginTop: 20,
               marginBottom: 20,
+              opacity: loading ? 0.6 : 1, // show as disabled
             }}
           >
-            <Text
-              style={{
-                paddingVertical: 12,
-                color: "#ffffff",
-                fontSize: 20,
-                fontWeight: "bold",
-              }}
-            >
-              {t("farmerSignup.continue")}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" style={{ paddingVertical: 12 }} />
+            ) : (
+              <Text
+                style={{
+                  paddingVertical: 12,
+                  color: "#ffffff",
+                  fontSize: 20,
+                  fontWeight: "bold",
+                }}
+              >
+                {t("farmerSignup.continue")}
+              </Text>
+            )}
           </TouchableOpacity>
 
-          {/* Already have account Login */}
+          {/* Already have account */}
           <Text style={{ color: "#006644", fontSize: 18 }}>
             {t("farmerSignup.alreadyAccount")}{" "}
-           <Text
-  style={{ fontWeight: "bold", fontSize: 18 }}
-  onPress={() => navigation.navigate("FarmerLogin")}
->
-  {t("farmerSignup.login")}
-</Text>
-
+            <Text
+              style={{ fontWeight: "bold", fontSize: 18 }}
+              onPress={() => navigation.navigate("FarmerLogin")}
+            >
+              {t("farmerSignup.login")}
+            </Text>
           </Text>
         </ScrollView>
       </ImageBackground>

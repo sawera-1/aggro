@@ -109,13 +109,6 @@ export default function ExpertSetting({ navigation }) {
             <Icon name="chevron-right" size={24} color="#999" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={menuStyle} onPress={() => navigation.navigate('ExpertFeedback')}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="feedback" size={22} color="#006644" style={{ marginRight: 15 }} />
-              <Text style={{ fontSize: 16, color: '#000' }}>{t('exsettings.feedback')}</Text>
-            </View>
-            <Icon name="chevron-right" size={24} color="#999" />
-          </TouchableOpacity>
 
           <TouchableOpacity style={menuStyle} onPress={() => setLogoutVisible(true)}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>

@@ -8,6 +8,9 @@ import {
   Image,
   ImageBackground,
   Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import CountryPicker from "react-native-country-picker-modal";
 import { sendExpertOtp } from "../../Helper/firebaseHelper";
@@ -56,119 +59,129 @@ const ExpertSignup = ({ navigation }) => {
         style={{ flex: 1 }}
         resizeMode="cover"
       >
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 20,
-          }}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
         >
-          {/* Logo */}
-          <Image
-            source={require("../../images/logodark.png")}
-            style={{ width: 280, height: 90, marginBottom: 25 }}
-          />
-
-          {/* Title */}
-          <Text
-            style={{
-              fontSize: 28,
-              fontWeight: "bold",
-              color: "#006644",
-              marginBottom: 10,
+          <ScrollView
+            contentContainerStyle={{
+              flexGrow: 1,
+              justifyContent: "flex-start",
+              alignItems: "center",
+              padding: 20,
             }}
+            keyboardShouldPersistTaps="handled"
           >
-            {t("expertSignup.title")}
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: "#006644",
-              marginBottom: 25,
-              textAlign: "center",
-            }}
-          >
-            {t("expertSignup.subtitle")}
-          </Text>
-
-          {/* Input fields */}
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder={t("expertSignup.fullName")}
-            placeholderTextColor="#006644"
-            style={styles.input}
-          />
-          <TextInput
-            value={qualification}
-            onChangeText={setQualification}
-            placeholder={t("expertSignup.qualification")}
-            placeholderTextColor="#006644"
-            style={styles.input}
-          />
-          <TextInput
-            value={specialization}
-            onChangeText={setSpecialization}
-            placeholder={t("expertSignup.specialization")}
-            placeholderTextColor="#006644"
-            style={styles.input}
-          />
-          <TextInput
-            value={experience}
-            onChangeText={setExperience}
-            placeholder={t("expertSignup.experience")}
-            placeholderTextColor="#006644"
-            keyboardType="numeric"
-            style={styles.input}
-          />
-
-          {/* Phone input with country picker */}
-          <View style={styles.phoneContainer}>
-            <CountryPicker
-              countryCode={countryCode}
-              withFilter
-              withFlag
-              withCallingCode
-              withModal
-              onSelect={(c) => {
-                setCountryCode(c.cca2);
-                setCallingCode(c.callingCode[0]);
-              }}
+            {/* Logo */}
+            <Image
+              source={require("../../images/logodark.png")}
+              style={{ width: 280, height: 90, marginBottom: 25 }}
             />
-            <Text style={{ color: "#006644", fontSize: 16, marginHorizontal: 8 }}>
-              +{callingCode}
+
+            {/* Title */}
+            <Text
+              style={{
+                fontSize: 28,
+                fontWeight: "bold",
+                color: "#006644",
+                marginBottom: 10,
+              }}
+            >
+              {t("expertSignup.title")}
             </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#006644",
+                marginBottom: 25,
+                textAlign: "center",
+              }}
+            >
+              {t("expertSignup.subtitle")}
+            </Text>
+
+            {/* Input Fields */}
             <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              placeholder={t("expertSignup.phone")}
+              value={name}
+              onChangeText={setName}
+              placeholder={t("expertSignup.fullName")}
+              placeholderTextColor="#006644"
+              style={styles.input}
+            />
+            <TextInput
+              value={qualification}
+              onChangeText={setQualification}
+              placeholder={t("expertSignup.qualification")}
+              placeholderTextColor="#006644"
+              style={styles.input}
+            />
+            <TextInput
+              value={specialization}
+              onChangeText={setSpecialization}
+              placeholder={t("expertSignup.specialization")}
+              placeholderTextColor="#006644"
+              style={styles.input}
+            />
+            <TextInput
+              value={experience}
+              onChangeText={setExperience}
+              placeholder={t("expertSignup.experience")}
               placeholderTextColor="#006644"
               keyboardType="numeric"
-              style={{ flex: 1, fontSize: 16, color: "#006644" }}
+              style={styles.input}
             />
-          </View>
 
-          {/* Continue button */}
-          <TouchableOpacity
-            onPress={handleSignup}
-            style={styles.button}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>{t("expertSignup.continue")}</Text>
-          </TouchableOpacity>
+            {/* Phone Input */}
+            <View style={styles.phoneContainer}>
+              <CountryPicker
+                countryCode={countryCode}
+                withFilter
+                withFlag
+                withCallingCode
+                withModal
+                onSelect={(c) => {
+                  setCountryCode(c.cca2);
+                  setCallingCode(c.callingCode[0]);
+                }}
+              />
+              <Text style={{ color: "#006644", fontSize: 16, marginHorizontal: 8 }}>
+                +{callingCode}
+              </Text>
+              <TextInput
+                value={phone}
+                onChangeText={setPhone}
+                placeholder={t("expertSignup.phone")}
+                placeholderTextColor="#006644"
+                keyboardType="numeric"
+                style={{ flex: 1, fontSize: 16, color: "#006644" }}
+              />
+            </View>
 
-          {/* Already have an account? Login */}
-          <Text style={{ color: "#006644", marginTop: 10 }}>
-            {t("expertSignup.alreadyAccount")}{" "}
-            <Text
-              style={{ fontWeight: "bold", fontSize: 16 }}
-              onPress={() => navigation.navigate("ExpertLogin")}
+            {/* Continue Button */}
+            <TouchableOpacity
+              onPress={handleSignup}
+              style={[styles.button, loading && { opacity: 0.7 }]}
+              disabled={loading}
             >
-              {t("expertSignup.login")}
+              {loading ? (
+                <ActivityIndicator color="#fff" size="small" style={{ paddingVertical: 12 }} />
+              ) : (
+                <Text style={styles.buttonText}>{t("expertSignup.continue")}</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Login Option */}
+            <Text style={{ color: "#006644", marginTop: 10 }}>
+              {t("expertSignup.alreadyAccount")}{" "}
+              <Text
+                style={{ fontWeight: "bold", fontSize: 16 }}
+                onPress={() => navigation.navigate("ExpertLogin")}
+              >
+                {t("expertSignup.login")}
+              </Text>
             </Text>
-          </Text>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </ImageBackground>
     </SafeAreaView>
   );
@@ -184,6 +197,7 @@ const styles = {
     paddingVertical: 16,
     fontSize: 16,
     color: "#006644",
+    backgroundColor: "rgba(255,255,255,0.9)", 
     marginBottom: 15,
   },
   phoneContainer: {
@@ -195,6 +209,7 @@ const styles = {
     width: "100%",
     paddingHorizontal: 10,
     paddingVertical: 5,
+    backgroundColor: "rgba(255,255,255,0.9)", 
     marginBottom: 15,
   },
   button: {

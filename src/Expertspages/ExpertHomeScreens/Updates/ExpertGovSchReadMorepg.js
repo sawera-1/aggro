@@ -18,14 +18,14 @@ export default function ExpertGovtReadMore({ navigation, route }) {
   const { scheme } = route.params;
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // TTS function
+  // 🔊 Speak function
   const speakEnglish = () => {
     const details = `
-      ${scheme.name || "Untitled"}.
-      ${scheme.description || "No description available"}.
-      Region: ${scheme.region || "Not Specified"}.
-      Start Date: ${scheme.startDate || "N/A"}.
-      End Date: ${scheme.endDate || "N/A"}.
+      ${scheme.name || t('govtReadMore.untitled')}.
+      ${scheme.description || t('govtReadMore.noDescription')}.
+      ${t('govtReadMore.region')}: ${scheme.region || t('govtReadMore.notSpecified')}.
+      ${t('govtReadMore.startDate')}: ${scheme.startDate || "N/A"}.
+      ${t('govtReadMore.endDate')}: ${scheme.endDate || "N/A"}.
     `;
 
     Tts.stop();
@@ -37,13 +37,13 @@ export default function ExpertGovtReadMore({ navigation, route }) {
     Tts.speak(details);
   };
 
-  // Stop TTS
+  // ⏹ Stop function
   const stopSpeaking = () => {
     Tts.stop();
     setIsSpeaking(false);
   };
 
-  // Detect when TTS finishes
+  // Automatically hide stop button when finished
   Tts.addEventListener('tts-finish', () => setIsSpeaking(false));
   Tts.addEventListener('tts-cancel', () => setIsSpeaking(false));
 
@@ -54,7 +54,7 @@ export default function ExpertGovtReadMore({ navigation, route }) {
         style={{ flex: 1 }}
         imageStyle={{ opacity: 0.9 }}
       >
-        {/* Top Bar */}
+        {/*  Top Bar */}
         <View
           style={{
             flexDirection: 'row',
@@ -73,7 +73,7 @@ export default function ExpertGovtReadMore({ navigation, route }) {
           </Text>
         </View>
 
-        {/* Scrollable Content */}
+        {/*  Scrollable Content */}
         <ScrollView contentContainerStyle={{ padding: 15, flexGrow: 1 }}>
           <View
             style={{
@@ -86,6 +86,7 @@ export default function ExpertGovtReadMore({ navigation, route }) {
               elevation: 3,
             }}
           >
+            {/* Image */}
             <Image
               source={scheme.image ? { uri: scheme.image } : require('../../../images/govt.png')}
               style={{
@@ -97,35 +98,41 @@ export default function ExpertGovtReadMore({ navigation, route }) {
               }}
             />
 
+            {/* Name */}
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#006644', marginBottom: 6 }}>
-              {scheme.name || 'Untitled'}
+              {scheme.name || t('govtReadMore.untitled')}
             </Text>
 
+            {/* Description */}
             <Text style={{ fontSize: 15, lineHeight: 22, color: '#555', marginBottom: 12 }}>
-              {scheme.description || 'No description available'}
+              {scheme.description || t('govtReadMore.noDescription')}
             </Text>
 
+            {/* Region */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>Region: </Text>
-              {scheme.region || 'Not Specified'}
+              <Text style={{ fontWeight: 'bold' }}>{t('govtReadMore.region')}: </Text>
+              {scheme.region || t('govtReadMore.notSpecified')}
             </Text>
 
+            {/* Start Date */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>Start Date: </Text>
-              {scheme.startDate || 'N/A'}
+              <Text style={{ fontWeight: 'bold' }}>{t('govtReadMore.startDate')}: </Text>
+              {scheme.startDate || "N/A"}
             </Text>
 
+            {/* End Date */}
             <Text style={{ fontSize: 14, marginBottom: 4, color: '#333' }}>
-              <Text style={{ fontWeight: 'bold' }}>End Date: </Text>
-              {scheme.endDate || 'N/A'}
+              <Text style={{ fontWeight: 'bold' }}>{t('govtReadMore.endDate')}: </Text>
+              {scheme.endDate || "N/A"}
             </Text>
 
+            {/* Buttons */}
             {scheme.url ? (
               <View
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
                   marginTop: 10,
                 }}
               >
@@ -160,7 +167,7 @@ export default function ExpertGovtReadMore({ navigation, route }) {
                   </View>
                 </TouchableOpacity>
 
-                {/* Speaker Button */}
+                {/* 🔊 Speaker / Stop Button */}
                 {!isSpeaking && (
                   <TouchableOpacity
                     onPress={speakEnglish}
@@ -174,7 +181,6 @@ export default function ExpertGovtReadMore({ navigation, route }) {
                   </TouchableOpacity>
                 )}
 
-                {/* Stop Button (appears when speaking) */}
                 {isSpeaking && (
                   <TouchableOpacity
                     onPress={stopSpeaking}

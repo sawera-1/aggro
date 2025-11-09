@@ -16,8 +16,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import firestore from '@react-native-firebase/firestore';
 import { launchImageLibrary } from 'react-native-image-picker';
 
-const CLOUDINARY_UPLOAD_PRESET = 'react_native_uploads'; // <- replace with your actual preset
-const CLOUDINARY_CLOUD_NAME = 'dumgs9cp4'; // <- replace with your actual cloud name
+const CLOUDINARY_UPLOAD_PRESET = 'react_native_uploads';
+const CLOUDINARY_CLOUD_NAME = 'dumgs9cp4';
 
 const OwnChannelDescription = ({ navigation, route }) => {
   const { t } = useTranslation();
@@ -31,7 +31,7 @@ const OwnChannelDescription = ({ navigation, route }) => {
   // Fetch channel info
   useEffect(() => {
     if (!channelId) {
-      Alert.alert('Error', 'Channel ID missing!');
+      Alert.alert(t('ownchannelDes.missingId'));
       return;
     }
 
@@ -44,20 +44,20 @@ const OwnChannelDescription = ({ navigation, route }) => {
             const data = doc.data();
             setChannelData(data);
 
-            // Fetch creator info from users
+            // Fetch creator info
             if (data.createdBy) {
               const userDoc = await firestore().collection('users').doc(data.createdBy).get();
               if (userDoc.exists) setCreatorData(userDoc.data());
               else setCreatorData(null);
             }
           } else {
-            Alert.alert('Error', 'Channel not found!');
+            Alert.alert(t('ownchannelDes.channelNotFound'));
           }
           setLoading(false);
         },
         (error) => {
           console.error('🔥 Channel fetch error:', error);
-          Alert.alert('Error', 'Could not fetch channel info.');
+          Alert.alert(t('ownchannelDes.fetchError'));
           setLoading(false);
         }
       );
@@ -67,8 +67,7 @@ const OwnChannelDescription = ({ navigation, route }) => {
     };
   }, [channelId]);
 
-
-  // Update channel info (editable for owner)
+  // Update channel info
   const handleSaveChanges = async () => {
     if (!channelData) return;
     try {
@@ -76,14 +75,14 @@ const OwnChannelDescription = ({ navigation, route }) => {
         name: channelData.name || '',
         description: channelData.description || '',
       });
-      Alert.alert('✅ Success', 'Channel info updated!');
+      Alert.alert(t('ownchannelDes.updateSuccess'));
     } catch (err) {
       console.error('🔥 Update error:', err);
-      Alert.alert('❌ Error', 'Failed to update channel info.');
+      Alert.alert(t('ownchannelDes.updateError'));
     }
   };
 
-  // Pick and upload new channel image
+  // Pick and upload new image
   const handleEditImage = async () => {
     try {
       setUploading(true);
@@ -94,7 +93,6 @@ const OwnChannelDescription = ({ navigation, route }) => {
       }
       const asset = result.assets[0];
 
-      // Upload to Cloudinary or your image server
       const formData = new FormData();
       formData.append('file', {
         uri: asset.uri,
@@ -110,14 +108,13 @@ const OwnChannelDescription = ({ navigation, route }) => {
       const json = await res.json();
       if (!json.secure_url) throw new Error('Upload failed');
 
-      // Update channel image in Firestore
       await firestore().collection('channels').doc(channelId).update({
         imageUrl: json.secure_url,
       });
-      Alert.alert('✅ Success', 'Channel image updated!');
+      Alert.alert(t('ownchannelDes.uploadSuccess'));
     } catch (error) {
       console.error('🔥 Image upload error:', error);
-      Alert.alert('Error', 'Failed to update image.');
+      Alert.alert(t('ownchannelDes.uploadError'));
     } finally {
       setUploading(false);
     }
@@ -127,10 +124,13 @@ const OwnChannelDescription = ({ navigation, route }) => {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#ECE5DD' }}>
         <ActivityIndicator size="large" color="#006644" />
-        <Text style={{ marginTop: 18, color: '#006644', fontWeight: 'bold' }}>Loading Channel...</Text>
+        <Text style={{ marginTop: 18, color: '#006644', fontWeight: 'bold' }}>
+          {t('ownchannelDes.loadingChannel')}
+        </Text>
       </SafeAreaView>
     );
   }
+
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -140,7 +140,16 @@ const OwnChannelDescription = ({ navigation, route }) => {
         imageStyle={{ opacity: 0.9 }}
       >
         {/* Top Bar */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, backgroundColor: '#006644', elevation: 5 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 15,
+            paddingVertical: 12,
+            backgroundColor: '#006644',
+            elevation: 5,
+          }}
+        >
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 15 }}>
             <Ionicons name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
@@ -149,7 +158,7 @@ const OwnChannelDescription = ({ navigation, route }) => {
             style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
           />
           <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', flexShrink: 1 }}>
-            {channelData.name || 'Unnamed Channel'}
+            {channelData.name || t('ownchannelDes.unnamedChannel')}
           </Text>
         </View>
 
@@ -162,42 +171,71 @@ const OwnChannelDescription = ({ navigation, route }) => {
             />
             <TouchableOpacity onPress={handleEditImage} disabled={uploading}>
               <Text style={{ color: uploading ? '#aaa' : '#006644', fontSize: 18, marginTop: 8 }}>
-                {uploading ? t('ownchannelDes.uploading') || 'Uploading...' : t('ownchannelDes.edit')}
+                {uploading ? t('ownchannelDes.uploading') : t('ownchannelDes.edit')}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Channel Info Form */}
-          <View style={{ padding: 20, backgroundColor: '#fff', borderRadius: 12, marginHorizontal: 15, elevation: 2 }}>
+          {/* Channel Info */}
+          <View
+            style={{
+              padding: 20,
+              backgroundColor: '#fff',
+              borderRadius: 12,
+              marginHorizontal: 15,
+              elevation: 2,
+            }}
+          >
             <TextInput
               value={channelData.name}
-              onChangeText={text => setChannelData({ ...channelData, name: text })}
+              onChangeText={(text) => setChannelData({ ...channelData, name: text })}
               placeholder={t('ownchannelDes.channelName')}
-              style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 12, marginBottom: 15, fontSize: 16 }}
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 10,
+                padding: 12,
+                marginBottom: 15,
+                fontSize: 16,
+              }}
             />
             <TextInput
               value={channelData.description}
-              onChangeText={text => setChannelData({ ...channelData, description: text })}
+              onChangeText={(text) => setChannelData({ ...channelData, description: text })}
               placeholder={t('ownchannelDes.channelDescription')}
               multiline
-              style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 12, height: 100, textAlignVertical: 'top', fontSize: 16, marginBottom: 15 }}
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 10,
+                padding: 12,
+                height: 100,
+                textAlignVertical: 'top',
+                fontSize: 16,
+                marginBottom: 15,
+              }}
             />
 
-            
-
-            {/* Created By Section */}
             <Text style={{ fontSize: 14, color: '#666', marginBottom: 14 }}>
               {t('ownchannelDes.createdBy')}: {creatorData?.name || channelData.createdBy || 'N/A'}
             </Text>
 
             <TouchableOpacity
-              style={{ backgroundColor: '#006644', padding: 14, borderRadius: 12, alignItems: 'center', elevation: 2 }}
+              style={{
+                backgroundColor: '#006644',
+                padding: 14,
+                borderRadius: 12,
+                alignItems: 'center',
+                elevation: 2,
+              }}
               onPress={handleSaveChanges}
             >
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
                 {t('ownchannelDes.saveChanges')}
               </Text>
             </TouchableOpacity>
+            
+
           </View>
         </ScrollView>
       </ImageBackground>

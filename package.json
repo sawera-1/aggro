@@ -44,6 +44,7 @@
     "react-native-nitro-modules": "^0.31.4",
     "react-native-reanimated": "^3.19.1",
     "react-native-recording": "^0.5.1",
+    "react-native-restart": "^0.0.27",
     "react-native-safe-area-context": "^5.6.1",
     "react-native-screens": "^4.15.4",
     "react-native-sound": "^0.13.0",

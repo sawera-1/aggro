@@ -4,13 +4,13 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import ExpertBottomTabs from "./ExpertStackpages/ExpertBottomtab";
 import ExpertSettingsStack from "./ExpertStackpages/ExpertSettingStack";
-import FeedbackPage from "../SettingPages/Feedbackpg";
 import ExpertSignup from "../Expertspages/ExpertAuthenticationScreens/ExpertSignuppg";
 import ExpertSignupOtp from "../Expertspages/ExpertAuthenticationScreens/ExpertOtppg";
 import ExpertLogin from "../Expertspages/ExpertAuthenticationScreens/ExpertLoginpg";
 import ExpertLoginOtp from "../Expertspages/ExpertAuthenticationScreens/ExpertOtploginpg";
 import ExpertOtpSuccess from "../Expertspages/ExpertAuthenticationScreens/ExpertOtpSuccesspg";
 import ExpertOtpFailure from "../Expertspages/ExpertAuthenticationScreens/ExpertOtpFailurepg";
+import ExpertFeedback from "../SettingPages/ExpertFeedbackpg";
 
 
 const Stack = createNativeStackNavigator();
@@ -25,7 +25,7 @@ const ExpertStack = () => (
     <Stack.Screen name="ExpertOtpFailure" component={ExpertOtpFailure} />
     <Stack.Screen name="ExpertBottomTabs" component={ExpertBottomTabs} />
      <Stack.Screen name="ExpertSettingsStack" component={ExpertSettingsStack} />
-      <Stack.Screen name="FarmerFeedback" component={FeedbackPage} />
+      <Stack.Screen name="ExpertFeedback" component={ExpertFeedback} />
   </Stack.Navigator>
 );
 

@@ -2,8 +2,10 @@ import React from 'react';
 import { ScrollView, View, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
+
 const ExpertOtpFailure = ({ navigation }) => {
-   const { t } = useTranslation();
+  const { t } = useTranslation();
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
@@ -11,8 +13,14 @@ const ExpertOtpFailure = ({ navigation }) => {
         style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
         resizeMode="cover"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+          }}
+        >
           {/* Logo */}
           <Image
             source={require('../../images/logodark.png')}
@@ -22,13 +30,24 @@ const ExpertOtpFailure = ({ navigation }) => {
           {/* Cross Icon */}
           <Image
             source={require('../../images/cross.png')}
-            style={{ width: 120, height: 120, marginBottom: 20, resizeMode: 'contain' }}
+            style={{
+              width: 120,
+              height: 120,
+              marginBottom: 20,
+              resizeMode: 'contain',
+            }}
           />
 
           {/* Error Text */}
-          
-          <Text style={{ fontSize: 16, color: '#ff8d73', textAlign: 'center', marginBottom: 20 }}>
-           Your OTP has not been verified. Try Again!!
+          <Text
+            style={{
+              fontSize: 16,
+              color: '#ff8d73',
+              textAlign: 'center',
+              marginBottom: 20,
+            }}
+          >
+            {t('otploginFailure.notverified')}
           </Text>
 
           {/* Retry Button */}
@@ -42,7 +61,9 @@ const ExpertOtpFailure = ({ navigation }) => {
             }}
             onPress={() => navigation.navigate('ExpertLogin')}
           >
-            <Text style={{ color: '#fff', fontSize: 16 }}>{t('otploginFailure.tryagain')}</Text>
+            <Text style={{ color: '#fff', fontSize: 16 }}>
+              {t('otploginFailure.tryagain')}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>

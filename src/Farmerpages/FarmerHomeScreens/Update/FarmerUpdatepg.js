@@ -5,17 +5,16 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-  TextInput,
   ImageBackground,
   ActivityIndicator,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getGovtSchemes, getCropInfo } from "../../../Helper/firebaseHelper"; 
+import { getGovtSchemes, getCropInfo } from "../../../Helper/firebaseHelper";
 
-//  Reusable Card
-const SchemeCard = ({ item, onPress, iconSource }) => (
+// Reusable Card
+const SchemeCard = ({ item, onPress, iconSource, t }) => (
   <View
     style={{
       flexDirection: "row",
@@ -33,12 +32,11 @@ const SchemeCard = ({ item, onPress, iconSource }) => (
     />
     <View style={{ flex: 1, justifyContent: "space-between" }}>
       <Text style={{ color: "#006644", fontWeight: "bold", fontSize: 16 }}>
-        {item.name || item.title || "Untitled"}
+        {item.name || item.title || t("updates.untitled")}
       </Text>
 
-      
       <Text style={{ color: "#888", fontSize: 12, marginVertical: 5 }}>
-        {item.source || "Official Update"}
+        {item.source || t("updates.officialUpdate")}
       </Text>
 
       <TouchableOpacity
@@ -53,7 +51,9 @@ const SchemeCard = ({ item, onPress, iconSource }) => (
           borderRadius: 20,
         }}
       >
-        <Text style={{ color: "#fff", marginRight: 5 }}>Read More</Text>
+        <Text style={{ color: "#fff", marginRight: 5 }}>
+          {t("updates.readMore")}
+        </Text>
         <View
           style={{
             width: 20,
@@ -91,14 +91,13 @@ const UpdateScreen = ({ navigation }) => {
           setCropInfo(data);
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error(t("updates.fetchError"), error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
-  }, [selectedTab]);
+  }, [selectedTab, t]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -118,19 +117,13 @@ const UpdateScreen = ({ navigation }) => {
             paddingBottom: 10,
           }}
         >
-          <Text
-            style={{ fontSize: 22, fontWeight: "bold", color: "#031501ff" }}
-          >
+          <Text style={{ fontSize: 22, fontWeight: "bold", color: "#031501ff" }}>
             {t("updates.title")}
           </Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("SettingStack")}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate("SettingStack")}>
             <Icon name="settings" size={26} color="#031501ff" />
           </TouchableOpacity>
         </View>
-
-       
 
         {/* Tabs */}
         <View
@@ -151,10 +144,8 @@ const UpdateScreen = ({ navigation }) => {
           >
             <Text
               style={{
-                color:
-                  selectedTab === "GovtSchemes" ? "#006644" : "#031501ff",
-                fontWeight:
-                  selectedTab === "GovtSchemes" ? "bold" : "normal",
+                color: selectedTab === "GovtSchemes" ? "#006644" : "#031501ff",
+                fontWeight: selectedTab === "GovtSchemes" ? "bold" : "normal",
               }}
             >
               {t("updates.tabs.govt")}
@@ -171,10 +162,8 @@ const UpdateScreen = ({ navigation }) => {
           >
             <Text
               style={{
-                color:
-                  selectedTab === "CropInfo" ? "#006644" : "#031501ff",
-                fontWeight:
-                  selectedTab === "CropInfo" ? "bold" : "normal",
+                color: selectedTab === "CropInfo" ? "#006644" : "#031501ff",
+                fontWeight: selectedTab === "CropInfo" ? "bold" : "normal",
               }}
             >
               {t("updates.tabs.crop")}
@@ -188,25 +177,11 @@ const UpdateScreen = ({ navigation }) => {
             <ActivityIndicator size="large" color="#006644" />
           ) : selectedTab === "GovtSchemes" ? (
             govtSchemes.map((item) => (
-              <SchemeCard
-                key={item.id}
-                item={item}
-                iconSource={require("../../../images/govt.png")}
-                onPress={() =>
-                  navigation.navigate("GovtRead", { scheme: item })
-                }
-              />
+              <SchemeCard key={item.id} item={item} iconSource={require("../../../images/govt.png")} onPress={() => navigation.navigate("GovtRead", { scheme: item })} t={t} />
             ))
           ) : (
             cropInfo.map((item) => (
-              <SchemeCard
-                key={item.id}
-                item={item}
-                iconSource={require("../../../images/c.png")}
-                onPress={() =>
-                  navigation.navigate("CropRead", { crop: item })
-                }
-              />
+              <SchemeCard key={item.id} item={item} iconSource={require("../../../images/c.png")} onPress={() => navigation.navigate("CropRead", { crop: item })} t={t} />
             ))
           )}
         </ScrollView>

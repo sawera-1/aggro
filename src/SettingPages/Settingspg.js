@@ -13,7 +13,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getUserData } from '../Helper/firebaseHelper'; 
+import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
 export default function SettingsScreen({ navigation }) {
@@ -23,12 +23,26 @@ export default function SettingsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const data = await getUserData();
-      setUser(data);
-      setLoading(false);
-    };
-    fetchData();
+    const uid = auth().currentUser.uid;
+
+    // Real-time listener for user data
+    const unsubscribe = firestore()
+      .collection('users')
+      .doc(uid)
+      .onSnapshot(
+        doc => {
+          if (doc.exists) {
+            setUser(doc.data());
+          }
+          setLoading(false);
+        },
+        error => {
+          console.error(t("settings.realtimeFetchFailed"), error);
+          setLoading(false);
+        }
+      );
+
+    return () => unsubscribe();
   }, []);
 
   if (loading) {
@@ -67,203 +81,103 @@ export default function SettingsScreen({ navigation }) {
         </View>
 
         <ScrollView contentContainerStyle={{ paddingVertical: 20 }}>
-          {/* Profile */}
           {/* Profile Section */}
           <View style={{ alignItems: 'center', marginBottom: 30 }}>
             <Image
               source={user?.dpImage ? { uri: user.dpImage } : require('../images/a.png')}
               style={{ width: 90, height: 90, borderRadius: 45, borderWidth: 2, borderColor: '#006644' }}
             />
-
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: 'bold',
-                marginTop: 10,
-                color: '#006644'
-              }}
-            >
-              {user?.name || "No Name"}
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 10, color: '#006644' }}>
+              {user?.name || t("settings.noName")}
             </Text>
-
             <Text style={{ color: '#006644', marginTop: 4 }}>
-              {user?.phoneNumber || "No Phone"}
+              {user?.phoneNumber || t("settings.noPhone")}
             </Text>
           </View>
 
-
-          {/* Menu Item: My Account */}
-          <TouchableOpacity
-            style={menuStyle}
+          {/* Menu Items */}
+          <MenuItem
+            icon="person"
+            label={t('settings.myAccount')}
             onPress={() => navigation.navigate('FMyAccount')}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="person" size={22} color="#006644" style={{ marginRight: 15 }} />
-              <Text style={{ fontSize: 16, color: '#000' }}>
-                {t('settings.myAccount')}
-              </Text>
-            </View>
-            <Icon name="chevron-right" size={24} color="#999" />
-          </TouchableOpacity>
-
-          {/* Menu Item: Privacy Policy */}
-          <TouchableOpacity
-            style={menuStyle}
+          />
+          <MenuItem
+            icon="privacy-tip"
+            label={t('settings.privacyPolicy')}
             onPress={() => navigation.navigate('FPrivacyPolicy')}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="privacy-tip" size={22} color="#006644" style={{ marginRight: 15 }} />
-              <Text style={{ fontSize: 16, color: '#000' }}>
-                {t('settings.privacyPolicy')}
-              </Text>
-            </View>
-            <Icon name="chevron-right" size={24} color="#999" />
-          </TouchableOpacity>
-
-          {/* Menu Item: Language */}
-          <TouchableOpacity
-            style={menuStyle}
+          />
+          <MenuItem
+            icon="language"
+            label={t('settings.language')}
             onPress={() => navigation.navigate('FLanguage')}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="language" size={22} color="#006644" style={{ marginRight: 15 }} />
-              <Text style={{ fontSize: 16, color: '#000' }}>
-                {t('settings.language')}
-              </Text>
-            </View>
-            <Icon name="chevron-right" size={24} color="#999" />
-          </TouchableOpacity>
-
-          {/* Menu Item: Feedback */}
-          <TouchableOpacity
-            style={menuStyle}
-            onPress={() => navigation.navigate('FarmerFeedback')}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="feedback" size={22} color="#006644" style={{ marginRight: 15 }} />
-              <Text style={{ fontSize: 16, color: '#000' }}>
-                {t('settings.feedback')}
-              </Text>
-            </View>
-            <Icon name="chevron-right" size={24} color="#999" />
-          </TouchableOpacity>
-
-          {/* Logout */}
-          <TouchableOpacity
-            style={menuStyle}
+          />
+          <MenuItem
+            icon="logout"
+            label={t('settings.logout')}
+            color="red"
             onPress={() => setLogoutVisible(true)}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="logout" size={22} color="red" style={{ marginRight: 15 }} />
-              <Text style={{ fontSize: 16, color: 'red' }}>{t('settings.logout')}</Text>
-            </View>
-          </TouchableOpacity>
+          />
 
           {/* Logout Modal */}
-          <Modal transparent visible={logoutVisible} animationType="fade">
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: '#e9e9e1',
-                  width: '85%',
-                  padding: 20,
-                  borderRadius: 15,
-                  alignItems: 'center'
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: '600',
-                    marginBottom: 12,
-                    color: '#333',
-                    textAlign: 'center'
-                  }}
-                >
-                  {t('settings.logoutModalTitle')}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 15,
-                    color: '#555',
-                    marginBottom: 20,
-                    textAlign: 'center'
-                  }}
-                >
-                  {t('settings.logoutModalMessage')}
-                </Text>
-
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    width: '100%'
-                  }}
-                >
-                  <TouchableOpacity
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      paddingVertical: 12,
-                      paddingHorizontal: 18,
-                      borderRadius: 10,
-                      flex: 1,
-                      justifyContent: 'center',
-                      backgroundColor: '#006644',
-                      marginRight: 8
-                    }}
-                    onPress={() => setLogoutVisible(false)}
-                  >
-                    <Ionicons name="close" size={20} color="#fff" style={{ marginRight: 6 }} />
-                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                      {t('settings.cancel')}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-  style={{
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 10,
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#cc0000',
-    marginLeft: 8
-  }}
-  onPress={async () => {
-    try {
-      await auth().signOut(); // ✅ logs out the user
-      setLogoutVisible(false);
-      navigation.replace('FarmerLogin'); // redirect to login
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  }}
->
-  <Ionicons name="log-out" size={20} color="#fff" style={{ marginRight: 6 }} />
-  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-    {t('settings.logout')}
-  </Text>
-</TouchableOpacity>
-
-                </View>
-              </View>
-            </View>
-          </Modal>
+          <LogoutModal
+            visible={logoutVisible}
+            t={t}
+            onCancel={() => setLogoutVisible(false)}
+            onConfirm={async () => {
+              try {
+                await auth().signOut();
+                setLogoutVisible(false);
+                navigation.replace('FarmerLogin');
+              } catch (error) {
+                console.error(t("settings.logoutFailed"), error);
+              }
+            }}
+          />
         </ScrollView>
       </ImageBackground>
     </SafeAreaView>
   );
 }
+
+// Menu Item Component
+const MenuItem = ({ icon, label, onPress, color = '#000' }) => (
+  <TouchableOpacity style={menuStyle} onPress={onPress}>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Icon name={icon} size={22} color={color === '#000' ? '#006644' : color} style={{ marginRight: 15 }} />
+      <Text style={{ fontSize: 16, color }}>{label}</Text>
+    </View>
+    <Icon name="chevron-right" size={24} color="#999" />
+  </TouchableOpacity>
+);
+
+// Logout Modal Component
+const LogoutModal = ({ visible, onCancel, onConfirm, t }) => (
+  <Modal transparent visible={visible} animationType="fade">
+    <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ backgroundColor: '#e9e9e1', width: '85%', padding: 20, borderRadius: 15, alignItems: 'center' }}>
+        <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12, color: '#333', textAlign: 'center' }}>
+          {t('settings.logoutConfirm')}
+        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 18, borderRadius: 10, flex: 1, justifyContent: 'center', backgroundColor: '#006644', marginRight: 8 }}
+            onPress={onCancel}
+          >
+            <Ionicons name="close" size={20} color="#fff" style={{ marginRight: 6 }} />
+            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{t('settings.cancel')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 18, borderRadius: 10, flex: 1, justifyContent: 'center', backgroundColor: '#cc0000', marginLeft: 8 }}
+            onPress={onConfirm}
+          >
+            <Ionicons name="log-out" size={20} color="#fff" style={{ marginRight: 6 }} />
+            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{t('settings.logout')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  </Modal>
+);
 
 const menuStyle = {
   flexDirection: 'row',

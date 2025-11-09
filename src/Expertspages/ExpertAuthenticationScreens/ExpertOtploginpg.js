@@ -13,8 +13,10 @@ import {
 import { verifyOtpForLogin } from "../../Helper/firebaseHelper";
 import NumericPad from "../../Components/Numericpad";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 const ExpertLoginOtp = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { confirmation, phone } = route.params;
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,7 @@ const ExpertLoginOtp = ({ navigation, route }) => {
   const handleBackspace = () => setOtp((prev) => prev.slice(0, -1));
 
   const handleConfirm = async () => {
-    if (otp.length < 6) return Alert.alert("Enter OTP");
+    if (otp.length < 6) return Alert.alert(t("alerts.enterOtp"));
     try {
       setLoading(true);
       await verifyOtpForLogin(confirmation, otp);
@@ -62,14 +64,21 @@ const ExpertLoginOtp = ({ navigation, route }) => {
 
           {/* Title */}
           <Text style={{ fontSize: 28, fontWeight: "bold", color: "#006644", marginBottom: 10 }}>
-            Enter OTP
+            {t("otpScreen.title")}
           </Text>
           <Text style={{ fontSize: 14, color: "#006644", marginBottom: 25, textAlign: "center" }}>
-            We have sent an OTP to {phone}
+            {t("otpScreen.subtitle")} {phone}
           </Text>
 
-          {/* OTP line inputs */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", width: "80%", marginBottom: 30 }}>
+          {/* OTP display boxes */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: "80%",
+              marginBottom: 30,
+            }}
+          >
             {[...Array(6)].map((_, i) => (
               <TextInput
                 key={i}
@@ -89,10 +98,7 @@ const ExpertLoginOtp = ({ navigation, route }) => {
           </View>
 
           {/* Numeric pad */}
-          <NumericPad
-            onPressNumber={handlePress}
-            onBackspace={handleBackspace}
-          />
+          <NumericPad onPressNumber={handlePress} onBackspace={handleBackspace} />
 
           {/* Confirm button */}
           <TouchableOpacity
@@ -112,19 +118,26 @@ const ExpertLoginOtp = ({ navigation, route }) => {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
-                Confirm
+                {t("otpScreen.confirm")}
               </Text>
             )}
           </TouchableOpacity>
 
           {/* Bottom text */}
-          <Text style={{ color: "#006644", marginTop: 15, fontSize: 14, textAlign: "center" }}>
-            Didn't receive OTP?{" "}
+          <Text
+            style={{
+              color: "#006644",
+              marginTop: 15,
+              fontSize: 14,
+              textAlign: "center",
+            }}
+          >
+            {t("otpScreen.noOtp")}{" "}
             <Text
               style={{ fontWeight: "bold", fontSize: 16 }}
               onPress={() => navigation.goBack()}
             >
-              Edit Phone
+              {t("otpScreen.editPhone")}
             </Text>
           </Text>
         </ScrollView>

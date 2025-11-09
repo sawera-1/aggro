@@ -58,7 +58,7 @@ const ExpertChannel = ({ navigation }) => {
                 return acc + (!isOwn && !isRead ? 1 : 0);
               }, 0);
               ch.unreadCount = unread;
-            } catch {}
+            } catch { }
             return ch;
           }));
           ownCh = ownComputed;
@@ -112,7 +112,7 @@ const ExpertChannel = ({ navigation }) => {
                 return acc + (isAfterFollow && !isOwn && !isRead ? 1 : 0);
               }, 0);
               ch.unreadCount = unread;
-            } catch {}
+            } catch { }
             return ch;
           });
           const withUnread = await Promise.all(computePromises);
@@ -132,7 +132,7 @@ const ExpertChannel = ({ navigation }) => {
         setDiscoverChannels(discoverCh);
       } catch (error) {
         console.error('❌ Error fetching channels:', error);
-        alert('Error loading channels: ' + error.message);
+        alert(t('expertChannels.errorLoading') + error.message);
       } finally {
         setLoading(false);
       }
@@ -168,7 +168,7 @@ const ExpertChannel = ({ navigation }) => {
                   return acc + (!isOwn && !isRead ? 1 : 0);
                 }, 0);
                 ch.unreadCount = unread;
-              } catch {}
+              } catch { }
               return ch;
             }));
           }
@@ -211,7 +211,7 @@ const ExpertChannel = ({ navigation }) => {
                 return acc + (isAfterFollow && !isOwn && !isRead ? 1 : 0);
               }, 0);
               ch.unreadCount = unread;
-            } catch {}
+            } catch { }
             return ch;
           }));
           setFollowingChannels(compute);
@@ -229,7 +229,7 @@ const ExpertChannel = ({ navigation }) => {
         ch.description?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-  // ✅ Fixed: Now navigation passes channelId properly
+  //  Fixed: Now navigation passes channelId properly
   const renderChannelList = (title, channels, onPressNav, emptyMessage) => (
     <View style={{ marginTop: 10 }}>
       <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#006644', marginVertical: 5 }}>
@@ -246,7 +246,7 @@ const ExpertChannel = ({ navigation }) => {
             key={channel.id}
             onPress={() =>
               navigation.navigate(onPressNav, {
-                channelId: channel.id, // ✅ Fixed: Pass channel ID
+                channelId: channel.id,
                 name: channel.name,
                 image: channel.imageUrl
                   ? { uri: channel.imageUrl }
@@ -350,24 +350,30 @@ const ExpertChannel = ({ navigation }) => {
           <ActivityIndicator size="large" color="#006644" style={{ marginTop: 30 }} />
         ) : (
           <ScrollView style={{ flex: 1, paddingHorizontal: 10, marginTop: 10 }}>
+            {/* Your Channels */}
             {renderChannelList(
               t('expertChannels.yourChannels'),
               ownChannels,
               'OwnChannelMsgScreen',
-              'You haven’t created any channels yet.'
+              t('expertChannels.noOwnChannels')
             )}
+
+            {/* Following Channels */}
             {renderChannelList(
               t('expertChannels.following'),
               followingChannels,
               'ExpertChannelMsg',
-              'You are not following any channels yet.'
+              t('expertChannels.noFollowing')
             )}
+
+            {/* Discover Channels */}
             {renderChannelList(
               t('expertChannels.discover'),
               discoverChannels,
               'ExpertChannelMsg',
-              'No channels to discover at the moment.'
+              t('expertChannels.noDiscover')
             )}
+
           </ScrollView>
         )}
       </ImageBackground>

@@ -5,50 +5,66 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from "react-native-safe-area-context";
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { useTranslation } from 'react-i18next';
 
 export default function ChannelDescription({ navigation }) {
+  const { t } = useTranslation();
   const route = useRoute();
   const { channelName, channelImage, channelDescription, dateCreated, createdBy, channelId } = route.params || {};
 
-const goToChatWithExpert = async () => {
-  try {
-    // Fetch expert info (creator of the channel)
-    const userDoc = await firestore().collection('users').doc(createdBy).get();
-    if (!userDoc.exists) return alert('Expert not found!');
+  const goToChatWithExpert = async () => {
+    try {
+      const userDoc = await firestore().collection('users').doc(createdBy).get();
+      if (!userDoc.exists) return alert(t('channelDescription.expertNotFound'));
 
-    const expertData = userDoc.data();
-
-    // Ensure chat doc exists so it shows up in FarmerChat list
-    const me = auth().currentUser?.uid;
-    if (me && createdBy) {
-      const chatId = me < createdBy ? `${me}_${createdBy}` : `${createdBy}_${me}`;
-      const chatRef = firestore().collection('chats').doc(chatId);
-      const chatDoc = await chatRef.get();
-      if (!chatDoc.exists) {
-        await chatRef.set({
-          participants: [me, createdBy],
-          createdAt: firestore.FieldValue.serverTimestamp(),
-        });
+      const expertData = userDoc.data();
+      const me = auth().currentUser?.uid;
+      if (me && createdBy) {
+        const chatId = me < createdBy ? `${me}_${createdBy}` : `${createdBy}_${me}`;
+        const chatRef = firestore().collection('chats').doc(chatId);
+        const chatDoc = await chatRef.get();
+        if (!chatDoc.exists) {
+          await chatRef.set({
+            participants: [me, createdBy],
+            createdAt: firestore.FieldValue.serverTimestamp(),
+          });
+        }
       }
+
+      navigation.navigate('ChatTab', {
+        screen: 'ChatMsg',
+        params: {
+          current_user: auth().currentUser.uid,
+          second_user: createdBy,
+          secondUserName: expertData.name,
+          secondUserPic: expertData.profileImage || expertData.dpImage || null,
+          channelId,
+          channelName,
+        },
+      });
+    } catch (error) {
+      console.log('Error fetching expert data:', error);
+      alert(t('channelDescription.failedLoadExpert'));
+    }
+  };
+
+  const handleReportChannel = () => {
+    const reporterUserId = auth().currentUser?.uid;
+    if (!reporterUserId) {
+      return alert(t('channelDescription.loginToReport'));
     }
 
-    navigation.navigate('ChatTab', {
-      screen: 'ChatMsg',
-      params: {
-        current_user: auth().currentUser.uid,
-        second_user: createdBy,
-        secondUserName: expertData.name,
-        secondUserPic: expertData.profileImage || expertData.dpImage || null,
-        channelId,
-        channelName,
-      },
+    // Pass all relevant channel info + reporter ID
+    navigation.navigate('FarmerFeedback', {
+      channelId,
+      channelName,
+      channelImage,
+      channelDescription,
+      dateCreated,
+      createdBy, // creator of the channel
+      reporterUserId, // current user reporting
     });
-  } catch (error) {
-    console.log('Error fetching expert data:', error);
-    alert('Failed to load expert info.');
-  }
-};
-
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -105,57 +121,52 @@ const goToChatWithExpert = async () => {
             {channelName}
           </Text>
           <Text style={{ fontSize: 16, color: '#555', textAlign: 'center', marginBottom: 10 }}>
-            {channelDescription || "No description available"}
+            {channelDescription || t('channelDescription.noDescription')}
           </Text>
           <Text style={{ fontSize: 14, color: '#666', marginBottom: 25 }}>
-            Created At: {dateCreated || '01 Jan 2025'}
+            {t('channelDescription.createdAt')}: {dateCreated || '01 Jan 2025'}
           </Text>
 
-          {/* Report Button */}
+          {/* Report Channel Button */}
           <TouchableOpacity
-  style={{
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#cc0000',
-    paddingVertical: 15,
-    paddingHorizontal: 22,
-    borderRadius: 14,
-    marginBottom: 18,
-    width: '90%',
-    justifyContent: 'center'
-  }}
-  onPress={() => navigation.navigate('FarmerFeedback', {
-    channelId: route.params.channelId,
-    channelName: channelName,
-    channelImage: channelImage,
-    channelDescription: channelDescription,
-    dateCreated: dateCreated
-  })}
->
-  <Ionicons name="alert-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
-  <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Report</Text>
-</TouchableOpacity>
-
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#cc0000',
+              paddingVertical: 15,
+              paddingHorizontal: 22,
+              borderRadius: 14,
+              marginBottom: 18,
+              width: '90%',
+              justifyContent: 'center'
+            }}
+            onPress={handleReportChannel}
+          >
+            <Ionicons name="alert-circle" size={22} color="#fff" style={{ marginRight: 10 }} />
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
+              {t('channelDescription.report')}
+            </Text>
+          </TouchableOpacity>
 
           {/* Chat with Expert Button */}
-<TouchableOpacity 
-  style={{
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#006644',
-    paddingVertical: 15,
-    paddingHorizontal: 22,
-    borderRadius: 14,
-    width: '90%',
-    justifyContent: 'center'
-  }}
-  onPress={goToChatWithExpert}
->
-  <Ionicons name="chatbubble-ellipses" size={22} color="#fff" style={{ marginRight: 10 }} />
-  <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Chat with Expert</Text>
-</TouchableOpacity>
-
-
+          <TouchableOpacity 
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#006644',
+              paddingVertical: 15,
+              paddingHorizontal: 22,
+              borderRadius: 14,
+              width: '90%',
+              justifyContent: 'center'
+            }}
+            onPress={goToChatWithExpert}
+          >
+            <Ionicons name="chatbubble-ellipses" size={22} color="#fff" style={{ marginRight: 10 }} />
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
+              {t('channelDescription.chatWithExpert')}
+            </Text>
+          </TouchableOpacity>
 
         </ScrollView>
       </ImageBackground>

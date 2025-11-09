@@ -10,8 +10,6 @@ import AIChatScreen from '../../Farmerpages/FarmerHomeScreens/FarmerAipg';
 import UpdatesStack from './UpdateStack';
 import FarmerAI from '../../Farmerpages/FarmerHomeScreens/FarmerAIchatBotpg';
 
-
-
 const Tab = createBottomTabNavigator();
 
 function tabBarVisible(route, hiddenNames) {
@@ -35,9 +33,9 @@ export default function BottomTabs() {
         name="ChannelsTab"
         component={ChannelStack}
         options={({ route }) => ({
-          tabBarLabel: t('bottomTabs.channels'),
+          tabBarLabel: t('bottomTabs.channels'), 
           tabBarStyle: {
-            display: tabBarVisible(route, ['ChannelMsg', 'ChannelDes',"LocationPiker"]),
+            display: tabBarVisible(route, ['ChannelMsg', 'ChannelDes', 'LocationPiker']),
             backgroundColor: '#006644',
             height: 60,
           },
@@ -49,9 +47,9 @@ export default function BottomTabs() {
         name="ChatTab"
         component={ChatsStack}
         options={({ route }) => ({
-          tabBarLabel: t('bottomTabs.chats'),
+          tabBarLabel: t('bottomTabs.chats'), 
           tabBarStyle: {
-            display: tabBarVisible(route, ['ChatMsg', 'ChatDes',"LocationPiker"]),
+            display: tabBarVisible(route, ['ChatMsg', 'ChatDes', 'LocationPiker']),
             backgroundColor: '#006644',
             height: 60,
           },
@@ -60,28 +58,26 @@ export default function BottomTabs() {
       />
 
       <Tab.Screen
-  name="AiTab"
-  component={AIChatScreen}
-  options={{
-    tabBarLabel: t('bottomTabs.scan'), // label like "Scan" or "Plant Scan"
-    tabBarStyle: {
-      display: 'none', // hide tab bar when this screen is open
-      backgroundColor: '#006644',
-      height: 60,
-    },
-    tabBarIcon: ({ color, size }) => (
-      <Ionicons name="leaf-outline" color={color} size={size} />
-    ),
-  }}
-/>
+        name="AiTab"
+        component={AIChatScreen}
+        options={{
+          tabBarLabel: t('bottomTabs.scan'), 
+          tabBarStyle: {
+            display: 'none',
+            backgroundColor: '#006644',
+            height: 60,
+          },
+          tabBarIcon: ({ color, size }) => <Ionicons name="leaf-outline" color={color} size={size} />,
+        }}
+      />
 
       <Tab.Screen
         name="FarmerBot"
         component={FarmerAI}
         options={{
-          tabBarLabel: t('bottomTabs.ai'),
+          tabBarLabel: t('bottomTabs.ai'), 
           tabBarStyle: {
-            display: 'none', // always hide for AI tab
+            display: 'none', 
             backgroundColor: '#006644',
             height: 60,
           },
@@ -93,7 +89,7 @@ export default function BottomTabs() {
         name="UpdatesTab"
         component={UpdatesStack}
         options={({ route }) => ({
-          tabBarLabel: t('bottomTabs.updates'),
+          tabBarLabel: t('bottomTabs.updates'), 
           tabBarStyle: {
             display: tabBarVisible(route, ['GovtRead', 'PriceRead', 'CropRead']),
             backgroundColor: '#006644',

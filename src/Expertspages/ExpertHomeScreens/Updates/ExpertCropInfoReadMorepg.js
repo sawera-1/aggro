@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,45 +7,60 @@ import {
   ScrollView,
   ImageBackground,
   Linking,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
 import Tts from 'react-native-tts';
 
 export default function ExpertCropReadMore({ navigation, route }) {
+  const { t } = useTranslation();
   const { crop } = route.params;
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Speak function
-  const speakDetails = () => {
+  // 🔊 Speak / Toggle
+  const toggleSpeak = () => {
+    if (isSpeaking) {
+      Tts.stop();
+      setIsSpeaking(false);
+      return;
+    }
+
     const details = `
-      Crop Name: ${crop?.name || "N/A"}.
-      Scientific Name: ${crop?.scientificName || "N/A"}.
-      Market Price: ${crop?.marketPrice || "N/A"}.
-      Season: ${crop?.season || "N/A"}.
-      Duration: ${crop?.duration || "N/A"}.
-      Water Requirement: ${crop?.waterRequirement || "N/A"}.
-      Soil Type: ${crop?.soilType || "N/A"}.
-      Yield Amount: ${crop?.yieldAmount || "N/A"}.
+      ${t('cropReadMore.cropName')}: ${crop?.name || t('cropReadMore.na')}.
+      ${t('cropReadMore.scientificName')}: ${crop?.scientificName || t('cropReadMore.na')}.
+      ${t('cropReadMore.marketPrice')}: ${crop?.marketPrice || t('cropReadMore.na')}.
+      ${t('cropReadMore.season')}: ${crop?.season || t('cropReadMore.na')}.
+      ${t('cropReadMore.duration')}: ${crop?.duration || t('cropReadMore.na')}.
+      ${t('cropReadMore.waterRequirement')}: ${crop?.waterRequirement || t('cropReadMore.na')}.
+      ${t('cropReadMore.soilType')}: ${crop?.soilType || t('cropReadMore.na')}.
+      ${t('cropReadMore.yieldAmount')}: ${crop?.yieldAmount || t('cropReadMore.na')}.
     `;
+
     Tts.stop();
     Tts.setDefaultLanguage("en-US");
-    Tts.setDefaultVoice("en-us-x-tpf-local");
     Tts.setDefaultRate(0.45);
     Tts.setDefaultPitch(1.0);
     setIsSpeaking(true);
     Tts.speak(details);
   };
 
-  // Stop function
+  // ⏹ Stop function
   const stopSpeaking = () => {
     Tts.stop();
     setIsSpeaking(false);
   };
 
-  // Automatically hide stop button when finished
-  Tts.addEventListener('tts-finish', () => setIsSpeaking(false));
-  Tts.addEventListener('tts-cancel', () => setIsSpeaking(false));
+  // Auto reset when TTS finishes
+  useEffect(() => {
+    const finishListener = Tts.addEventListener('tts-finish', () => setIsSpeaking(false));
+    const cancelListener = Tts.addEventListener('tts-cancel', () => setIsSpeaking(false));
+    return () => {
+      finishListener.remove();
+      cancelListener.remove();
+    };
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -69,7 +84,7 @@ export default function ExpertCropReadMore({ navigation, route }) {
             <Icon name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-            {crop?.name || "Crop Info"}
+            {crop?.name || t('cropReadMore.title')}
           </Text>
         </View>
 
@@ -86,67 +101,51 @@ export default function ExpertCropReadMore({ navigation, route }) {
               elevation: 3,
             }}
           >
-            {/* Image */}
             <Image
               source={require('../../../images/a.png')}
-              style={{
-                width: '100%',
-                height: 200,
-                borderRadius: 8,
-                resizeMode: 'cover',
-                marginBottom: 15,
-              }}
+              style={{ width: '100%', height: 200, borderRadius: 8, resizeMode: 'cover', marginBottom: 15 }}
             />
 
-            {/* Crop Info */}
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#006644', marginBottom: 6 }}>
-              {crop?.name || "N/A"}
+              {crop?.name || t('cropReadMore.na')}
             </Text>
 
             <Text style={{ fontSize: 16, color: '#333', marginBottom: 6 }}>
-              🔬 Scientific Name: {crop?.scientificName || "N/A"}
+              🔬 {t('cropReadMore.scientificName')}: {crop?.scientificName || t('cropReadMore.na')}
             </Text>
 
             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 10 }}>
-              💰 Market Price: {crop?.marketPrice || "N/A"}
+              💰 {t('cropReadMore.marketPrice')}: {crop?.marketPrice || t('cropReadMore.na')}
             </Text>
 
             <Text style={{ fontSize: 15, lineHeight: 22, color: '#555', marginBottom: 12 }}>
-              🌱 Season: {crop?.season || "N/A"}
+              🌱 {t('cropReadMore.season')}: {crop?.season || t('cropReadMore.na')}
             </Text>
 
             <Text style={{ fontSize: 15, marginBottom: 4, color: '#333' }}>
-              ⏳ Duration: {crop?.duration || "N/A"}
+              ⏳ {t('cropReadMore.duration')}: {crop?.duration || t('cropReadMore.na')}
             </Text>
 
             <Text style={{ fontSize: 15, marginBottom: 4, color: '#333' }}>
-              💧 Water: {crop?.waterRequirement || "N/A"}
+              💧 {t('cropReadMore.waterRequirement')}: {crop?.waterRequirement || t('cropReadMore.na')}
             </Text>
 
             <Text style={{ fontSize: 15, marginBottom: 4, color: '#333' }}>
-              🌍 Soil: {crop?.soilType || "N/A"}
+              🌍 {t('cropReadMore.soilType')}: {crop?.soilType || t('cropReadMore.na')}
             </Text>
 
             <Text style={{ fontSize: 15, marginBottom: 4, color: '#333' }}>
-              📦 Yield Amount: {crop?.yieldAmount || "N/A"}
+              📦 {t('cropReadMore.yieldAmount')}: {crop?.yieldAmount || t('cropReadMore.na')}
             </Text>
 
-            {/* Buttons Row */}
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginTop: 15,
-                justifyContent: 'space-between',
-              }}
-            >
-              {/*  Read More Button */}
+            {/* Buttons */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 15, justifyContent: 'space-between' }}>
               <TouchableOpacity
                 onPress={() => {
                   if (crop?.url && crop.url.trim() !== "") {
                     Linking.openURL(crop.url);
                   } else {
-                    alert("No link available");
+                    Alert.alert(t('cropReadMore.noLink'));
                   }
                 }}
                 style={{
@@ -159,37 +158,30 @@ export default function ExpertCropReadMore({ navigation, route }) {
                 }}
               >
                 <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
-                  Read More
+                  {t('cropReadMore.readMore')}
                 </Text>
               </TouchableOpacity>
 
-              {/* Speaker / Stop Button */}
-              {!isSpeaking && (
-                <TouchableOpacity
-                  onPress={speakDetails}
-                  style={{
-                    backgroundColor: '#006644',
-                    padding: 10,
-                    borderRadius: 50,
-                  }}
-                >
-                  <Icon name="volume-high" size={20} color="#fff" />
-                </TouchableOpacity>
-              )}
+              {/* 🔊 Speaker / Stop toggle */}
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                {!isSpeaking && (
+                  <TouchableOpacity
+                    onPress={toggleSpeak}
+                    style={{ backgroundColor: '#006644', padding: 10, borderRadius: 25 }}
+                  >
+                    <Icon name="volume-high" size={20} color="#fff" />
+                  </TouchableOpacity>
+                )}
 
-              {isSpeaking && (
-                <TouchableOpacity
-                  onPress={stopSpeaking}
-                  style={{
-                    backgroundColor: 'red',
-                    padding: 10,
-                    borderRadius: 50,
-                    marginLeft: 10,
-                  }}
-                >
-                  <Icon name="stop" size={20} color="#fff" />
-                </TouchableOpacity>
-              )}
+                {isSpeaking && (
+                  <TouchableOpacity
+                    onPress={toggleSpeak}
+                    style={{ backgroundColor: 'red', padding: 10, borderRadius: 25 }}
+                  >
+                    <Icon name="stop" size={20} color="#fff" />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </ScrollView>

@@ -8,6 +8,7 @@ import {
   ImageBackground,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import CountryPicker from "react-native-country-picker-modal";
 import NumericPad from "../../Components/Numericpad";
@@ -16,37 +17,47 @@ import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const FarmerLogin = ({ navigation }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [phone, setPhone] = useState("");
-  const [countryCode, setCountryCode] = useState("PK"); 
+  const [countryCode, setCountryCode] = useState("PK");
   const [callingCode, setCallingCode] = useState("92");
   const [showPad, setShowPad] = useState(false);
+  const [loading, setLoading] = useState(false); // loading state
 
   const handlePress = (num) => {
-    if (phone.length < 11) setPhone((prev) => prev + num);
+    if (!loading && phone.length < 11) setPhone((prev) => prev + num);
   };
 
   const handleBackspace = () => {
-    if (phone.length > 0) setPhone((prev) => prev.slice(0, -1));
+    if (!loading && phone.length > 0) setPhone((prev) => prev.slice(0, -1));
   };
 
   const handleLogin = async () => {
+    if (loading) return; // prevent double presses
     if (!phone) {
-      Alert.alert("Error", "Please enter phone number");
+      Alert.alert(
+        i18n.language === "ur" ? "غلطی" : "Error",
+        i18n.language === "ur" ? "براہ کرم فون نمبر درج کریں۔" : "Please enter phone number"
+      );
       return;
     }
 
     const fullPhone = `+${callingCode}${phone.replace(/^0+/, "")}`;
 
     try {
-      // ✅ Send OTP
+      setLoading(true);
       const confirmation = await sendOtp(fullPhone);
 
-      // ✅ Navigate to OTP screen
-      navigation.navigate("FarmerOtp", { confirmation, phone });
+      // Navigate to OTP screen
+      navigation.navigate("FarmerOtp", { confirmation, phone: fullPhone });
     } catch (e) {
       console.error("Login error:", e);
-      Alert.alert("Error", e.message);
+      Alert.alert(
+        i18n.language === "ur" ? "غلطی" : "Error",
+        e.message || (i18n.language === "ur" ? "کچھ غلط ہو گیا۔" : "Something went wrong")
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -126,19 +137,33 @@ const FarmerLogin = ({ navigation }) => {
             />
           )}
 
+          {/* Continue Button with loading */}
           <TouchableOpacity
             onPress={handleLogin}
+            disabled={loading}
             style={{
               width: "100%",
               borderRadius: 10,
               backgroundColor: "#006644",
               alignItems: "center",
               marginBottom: 20,
+              opacity: loading ? 0.6 : 1,
             }}
           >
-            <Text style={{ paddingVertical: 12, color: "#fff", fontSize: 20, fontWeight: "bold" }}>
-              {t("farmerLogin.continue")}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" style={{ paddingVertical: 12 }} />
+            ) : (
+              <Text
+                style={{
+                  paddingVertical: 12,
+                  color: "#fff",
+                  fontSize: 20,
+                  fontWeight: "bold",
+                }}
+              >
+                {t("farmerLogin.continue")}
+              </Text>
+            )}
           </TouchableOpacity>
 
           <Text style={{ color: "#006644", fontSize: 20 }}>

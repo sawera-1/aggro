@@ -1,62 +1,94 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, TextInput, TouchableOpacity, ScrollView, ImageBackground, ActivityIndicator, Alert } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  ImageBackground,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getUserData } from "../Helper/firebaseHelper"; // make sure firestore is exported
-import firestore from '@react-native-firebase/firestore';
+import firestore from "@react-native-firebase/firestore";
+import auth from "@react-native-firebase/auth";
+import { useTranslation } from "react-i18next";
 
-export default function FeedbackPage({ navigation }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [stars, setStars] = useState(0); // selected star count
+export default function FarmerFeedback({ navigation, route }) {
+  const { t } = useTranslation();
+
+  const currentUserId = auth().currentUser?.uid;
+
+  const {
+    reportedUser, // optional: full user object
+    channelId,
+    channelName,
+    channelImage,
+    channelDescription,
+    dateCreated,
+    createdBy,
+  } = route.params || {};
+
+  const [stars, setStars] = useState(0);
   const [feedbackText, setFeedbackText] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const data = await getUserData();
-        setUser(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  const handleStarPress = (value) => {
-    setStars(value);
-  };
+  const handleStarPress = (value) => setStars(value);
 
   const handleSubmit = async () => {
+    if (!currentUserId) {
+      Alert.alert(t("farmerFeedback.error"), t("farmerFeedback.loginToReport"));
+      return;
+    }
+
     if (stars === 0) {
-      Alert.alert("Error", "Please select a star rating.");
+      Alert.alert(t("farmerFeedback.error"), t("farmerFeedback.selectStar"));
       return;
     }
+
     if (!feedbackText.trim()) {
-      Alert.alert("Error", "Please write your feedback.");
+      Alert.alert(t("farmerFeedback.error"), t("farmerFeedback.writeFeedback"));
       return;
     }
+
+    setLoading(true);
 
     try {
-      await firestore().collection('feedbacks').add({
-        userId: user.uid,
-        name: user.name,
-        phoneNumber: user.phoneNumber,
+      const payload = {
+        reporterUserId: currentUserId,
         rating: stars,
         content: feedbackText,
-        createdAt: new Date(),
-      });
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      };
 
+      if (reportedUser) {
+        payload.reportedUserId = reportedUser.uid;
+        payload.reportedUserName = reportedUser.name;
+        payload.reportedUserPhone = reportedUser.phoneNumber;
+        payload.reportedUserDp = reportedUser.dpImage || null;
+        payload.type = "user";
+      } else if (channelId) {
+        payload.channelId = channelId;
+        payload.channelName = channelName;
+        payload.channelImage = channelImage || null;
+        payload.channelDescription = channelDescription || null;
+        payload.channelCreatedBy = createdBy;
+        payload.type = "channel";
+      }
 
-      Alert.alert("Success", "Thank you for your feedback!");
+      await firestore().collection("feedbacks").add(payload);
+
+      Alert.alert(t("farmerFeedback.success"), t("farmerFeedback.thanks"));
       setStars(0);
       setFeedbackText("");
       navigation.goBack();
     } catch (err) {
       console.error(err);
-      Alert.alert("Error", "Failed to submit feedback.");
+      Alert.alert(t("farmerFeedback.error"), t("farmerFeedback.submitFailed"));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -68,30 +100,58 @@ export default function FeedbackPage({ navigation }) {
     );
   }
 
+  const showHeaderImage = reportedUser ? reportedUser.dpImage : channelImage;
+  const showHeaderName = reportedUser ? reportedUser.name : channelName;
+  const showHeaderSubtitle = reportedUser ? reportedUser.phoneNumber : channelDescription;
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ImageBackground source={require("../images/background.jpg")} style={{ flex: 1 }} imageStyle={{ opacity: 0.9 }}>
-
+      <ImageBackground
+        source={require("../images/background.jpg")}
+        style={{ flex: 1 }}
+        imageStyle={{ opacity: 0.9 }}
+      >
         {/* Top Bar */}
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 15, paddingVertical: 15, backgroundColor: "#006644" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 15,
+            paddingVertical: 15,
+            backgroundColor: "#006644",
+          }}
+        >
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: 10 }}>
             <Icon name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Image
-            source={user?.dpImage ? { uri: user.dpImage } : require("../images/a.png")}
+            source={showHeaderImage ? { uri: showHeaderImage } : require("../images/a.png")}
             style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
           />
           <View>
-            <Text style={{ fontSize: 16, fontWeight: "bold", color: "#fff" }}>{user?.name || "No Name"}</Text>
-            <Text style={{ color: "#fff", fontSize: 13 }}>{user?.phoneNumber || "No Phone"}</Text>
+            <Text style={{ fontSize: 16, fontWeight: "bold", color: "#fff" }}>
+              {showHeaderName || t("farmerFeedback.noName")}
+            </Text>
+            <Text style={{ color: "#fff", fontSize: 13 }}>
+              {showHeaderSubtitle || t("farmerFeedback.noPhone")}
+            </Text>
           </View>
         </View>
 
         {/* Feedback Form */}
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
-          <View style={{ backgroundColor: "rgba(255, 255, 255, 0.9)", padding: 20, borderRadius: 15, width: "100%", alignItems: "center" }}>
-
-            <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 15, color: "#333" }}>Feedback</Text>
+          <View
+            style={{
+              backgroundColor: "rgba(255, 255, 255, 0.9)",
+              padding: 20,
+              borderRadius: 15,
+              width: "100%",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 15, color: "#333" }}>
+              {channelId ? t("farmerFeedback.reportChannel") : t("farmerFeedback.reportUser")}
+            </Text>
 
             {/* Stars */}
             <View style={{ flexDirection: "row", marginBottom: 15 }}>
@@ -119,21 +179,24 @@ export default function FeedbackPage({ navigation }) {
                 textAlignVertical: "top",
                 marginBottom: 15,
                 backgroundColor: "#fff",
-                color: "#000" 
+                color: "#000",
               }}
-              placeholder="Write your feedback..."
-              placeholderTextColor="#888" 
+              placeholder={t("farmerFeedback.writeFeedbackPlaceholder")}
+              placeholderTextColor="#888"
               multiline
               value={feedbackText}
               onChangeText={setFeedbackText}
             />
 
-
             {/* Submit Button */}
-            <TouchableOpacity onPress={handleSubmit} style={{ backgroundColor: "#006644", paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10 }}>
-              <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>Submit</Text>
+            <TouchableOpacity
+              onPress={handleSubmit}
+              style={{ backgroundColor: "#006644", paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10 }}
+            >
+              <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
+                {t("farmerFeedback.submit")}
+              </Text>
             </TouchableOpacity>
-
           </View>
         </ScrollView>
       </ImageBackground>

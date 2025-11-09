@@ -1,9 +1,11 @@
 import React from 'react';
-import {  ScrollView, View, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from "react-native-safe-area-context";
+
 const ExpertOtpSuccess = ({ navigation }) => {
   const { t } = useTranslation();
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
@@ -11,8 +13,14 @@ const ExpertOtpSuccess = ({ navigation }) => {
         style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
         resizeMode="cover"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+          }}
+        >
           {/* Logo */}
           <Image
             source={require('../../images/logodark.png')}
@@ -26,9 +34,15 @@ const ExpertOtpSuccess = ({ navigation }) => {
           />
 
           {/* Success Text */}
-          
-          <Text style={{ fontSize: 16, color: '#006644', textAlign: 'center', marginBottom: 20 }}>
-           Your OTP has been verified successfully.
+          <Text
+            style={{
+              fontSize: 16,
+              color: '#006644',
+              textAlign: 'center',
+              marginBottom: 20,
+            }}
+          >
+            {t('expertloginSuccess.verified')}
           </Text>
 
           {/* Continue Button */}
@@ -42,7 +56,9 @@ const ExpertOtpSuccess = ({ navigation }) => {
             }}
             onPress={() => navigation.replace('ExpertBottomTabs')}
           >
-            <Text style={{ color: '#fff', fontSize: 16 }}> {t('expertloginSuccess.continue')}</Text>
+            <Text style={{ color: '#fff', fontSize: 16 }}>
+              {t('expertloginSuccess.continue')}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>
@@ -50,4 +66,4 @@ const ExpertOtpSuccess = ({ navigation }) => {
   );
 };
 
-export default  ExpertOtpSuccess ;
+export default ExpertOtpSuccess;

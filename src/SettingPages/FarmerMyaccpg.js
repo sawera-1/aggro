@@ -37,7 +37,7 @@ export default function FarmerMyAcc() {
           setDpImage(data.dpImage || null);
         }
       } catch (error) {
-        console.error("Error fetching user:", error);
+        console.error(t("farmerMyaccount.errorFetchingUser"), error);
       } finally {
         setLoading(false);
       }
@@ -50,7 +50,7 @@ export default function FarmerMyAcc() {
     launchImageLibrary({ mediaType: "photo", quality: 0.7 }, async (response) => {
       if (response.didCancel) return;
       if (response.errorCode) {
-        Alert.alert("Error", response.errorMessage);
+        Alert.alert(t("farmerMyaccount.error"), response.errorMessage);
         return;
       }
 
@@ -65,10 +65,10 @@ export default function FarmerMyAcc() {
           });
           setDpImage(uploadedUrl);
           await updateUserData({ dpImage: uploadedUrl });
-          Alert.alert("Success", "Profile picture updated!");
+          Alert.alert(t("farmerMyaccount.success"), t("farmerMyaccount.profilePicUpdated"));
         } catch (err) {
           console.error(err);
-          Alert.alert("Error", "Image upload failed!");
+          Alert.alert(t("farmerMyaccount.error"), t("farmerMyaccount.imageUploadFailed"));
         } finally {
           setUploading(false);
         }
@@ -79,11 +79,11 @@ export default function FarmerMyAcc() {
   const handleSave = async () => {
     try {
       await updateUserData({ name, phoneNumber: phone, dpImage });
-      Alert.alert("Success", "Profile updated successfully!");
+      Alert.alert(t("farmerMyaccount.success"), t("farmerMyaccount.profileUpdated"));
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Failed to update profile.");
+      Alert.alert(t("farmerMyaccount.error"), t("farmerMyaccount.profileUpdateFailed"));
     }
   };
 
@@ -111,7 +111,9 @@ export default function FarmerMyAcc() {
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Image source={dpImage ? { uri: dpImage } : require("../images/a.png")} style={{ width: 50, height: 50, borderRadius: 25 }} />
             <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontSize: 16, fontWeight: "bold", color: "#fff" }}>{name || "No Name"}</Text>
+              <Text style={{ fontSize: 16, fontWeight: "bold", color: "#fff" }}>
+                {name || t("farmerMyaccount.noName")}
+              </Text>
             </View>
           </View>
         </View>
@@ -127,16 +129,22 @@ export default function FarmerMyAcc() {
           </View>
 
           {/* Name */}
-          <Text style={{ fontSize: 14, fontWeight: "bold", color: "#006644", marginBottom: 5 }}>{t("farmerMyaccount.nameLabel")}</Text>
+          <Text style={{ fontSize: 14, fontWeight: "bold", color: "#006644", marginBottom: 5 }}>
+            {t("farmerMyaccount.nameLabel")}
+          </Text>
           <TextInput value={name} onChangeText={setName} placeholder={t("farmerMyaccount.namePlaceholder")} style={{ backgroundColor: "#fff", borderRadius: 10, paddingHorizontal: 15, paddingVertical: 10, borderWidth: 1, borderColor: "#ccc", marginBottom: 20 }} />
 
           {/* Phone */}
-          <Text style={{ fontSize: 14, fontWeight: "bold", color: "#006644", marginBottom: 5 }}>{t("farmerMyaccount.phoneLabel")}</Text>
+          <Text style={{ fontSize: 14, fontWeight: "bold", color: "#006644", marginBottom: 5 }}>
+            {t("farmerMyaccount.phoneLabel")}
+          </Text>
           <TextInput value={phone} onChangeText={setPhone} placeholder={t("farmerMyaccount.phonePlaceholder")} keyboardType="phone-pad" style={{ backgroundColor: "#fff", borderRadius: 10, paddingHorizontal: 15, paddingVertical: 10, borderWidth: 1, borderColor: "#ccc" }} />
 
           {/* Save Button */}
           <TouchableOpacity onPress={handleSave} style={{ backgroundColor: "#006644", paddingVertical: 12, borderRadius: 10, marginTop: 30, alignItems: "center" }}>
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>{t("farmerMyaccount.saveBtn")}</Text>
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
+              {t("farmerMyaccount.saveBtn")}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>

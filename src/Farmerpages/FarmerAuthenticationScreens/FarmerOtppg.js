@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 const FarmerOtp = ({ navigation, route }) => {
   const { confirmation, phone } = route.params;
   const dispatch = useDispatch();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,15 +33,24 @@ const FarmerOtp = ({ navigation, route }) => {
 
   const handleConfirm = async () => {
     if (otp.length < 6) {
-      Alert.alert("Error", "Enter full OTP");
+      Alert.alert(
+        i18n.language === "ur" ? "غلطی" : "Error",
+        i18n.language === "ur" ? "براہ کرم مکمل او ٹی پی درج کریں۔" : "Please enter the full OTP."
+      );
       return;
     }
+
     try {
       setLoading(true);
       const user = await verifyOtpForLogin(confirmation, otp);
 
       if (!user) {
-        Alert.alert("No account found", "Please sign up first.");
+        Alert.alert(
+          i18n.language === "ur" ? "اکاؤنٹ موجود نہیں" : "No account found",
+          i18n.language === "ur"
+            ? "براہ کرم پہلے سائن اپ کریں۔"
+            : "Please sign up first."
+        );
         navigation.replace("FarmerSignup");
         return;
       }
@@ -50,7 +59,7 @@ const FarmerOtp = ({ navigation, route }) => {
       navigation.replace("OtpSuccess");
     } catch (e) {
       console.error(e);
-      Alert.alert("Invalid OTP", "Please try again.");
+      navigation.replace("OtpFailure"); // Go to failure screen if OTP is wrong
     } finally {
       setLoading(false);
     }

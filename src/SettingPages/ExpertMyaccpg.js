@@ -15,9 +15,11 @@ import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { launchImageLibrary } from "react-native-image-picker";
 import { getExpertData, updateUserData, uploadImageToCloudinary } from "../Helper/firebaseHelper";
+import { useTranslation } from "react-i18next";
 
 export default function ExpertMyAcc() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -42,7 +44,7 @@ export default function ExpertMyAcc() {
         }
       } catch (error) {
         console.error("Error fetching expert data:", error);
-        Alert.alert("Error", "Failed to load expert data.");
+        Alert.alert(t("exmyacc.error"), t("exmyacc.failedToLoad"));
       } finally {
         setLoading(false);
       }
@@ -54,7 +56,7 @@ export default function ExpertMyAcc() {
     launchImageLibrary({ mediaType: "photo", quality: 0.7 }, async (response) => {
       if (response.didCancel) return;
       if (response.errorCode) {
-        Alert.alert("Error", response.errorMessage);
+        Alert.alert(t("exmyacc.error"), response.errorMessage);
         return;
       }
       const asset = response.assets?.[0];
@@ -69,7 +71,7 @@ export default function ExpertMyAcc() {
           setDpImage(uploadedUrl);
         } catch (err) {
           console.error(err);
-          Alert.alert("Error", "Image upload failed!");
+          Alert.alert(t("exmyacc.error"), t("exmyacc.imageUploadFailed"));
         } finally {
           setUploading(false);
         }
@@ -87,11 +89,11 @@ export default function ExpertMyAcc() {
         specialization,
         experience,
       });
-      Alert.alert("Success", "Profile updated successfully!");
+      Alert.alert(t("exmyacc.success"), t("exmyacc.profileUpdated"));
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Failed to update profile.");
+      Alert.alert(t("exmyacc.error"), t("exmyacc.updateError"));
     }
   };
 
@@ -131,7 +133,7 @@ export default function ExpertMyAcc() {
             />
             <View style={{ marginLeft: 10 }}>
               <Text style={{ fontSize: 16, fontWeight: "bold", color: "#fff" }}>
-                {name || "No Name"}
+                {name || t("exmyacc.noName")}
               </Text>
             </View>
           </View>
@@ -142,39 +144,85 @@ export default function ExpertMyAcc() {
           <View style={{ alignSelf: "center", marginBottom: 20, position: "relative" }}>
             <Image
               source={dpImage ? { uri: dpImage } : require("../images/a.png")}
-              style={{ width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: "#006644" }}
+              style={{
+                width: 110,
+                height: 110,
+                borderRadius: 55,
+                borderWidth: 3,
+                borderColor: "#006644",
+              }}
             />
             <TouchableOpacity
               onPress={handlePickImage}
-              style={{ position: "absolute", bottom: 0, right: 0, backgroundColor: "#006644", borderRadius: 15, padding: 5 }}
+              style={{
+                position: "absolute",
+                bottom: 0,
+                right: 0,
+                backgroundColor: "#006644",
+                borderRadius: 15,
+                padding: 5,
+              }}
             >
-              {uploading ? <ActivityIndicator size="small" color="#fff" /> : <Icon name="photo-camera" size={20} color="#fff" />}
+              {uploading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Icon name="photo-camera" size={20} color="#fff" />
+              )}
             </TouchableOpacity>
           </View>
 
           {/* Name */}
-          <Text style={labelStyle}>Name</Text>
-          <TextInput value={name} onChangeText={setName} placeholder="Enter name" style={inputStyle} />
+          <Text style={labelStyle}>{t("exmyacc.name")}</Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder={t("exmyacc.enterName")}
+            style={inputStyle}
+          />
 
           {/* Phone */}
-          <Text style={labelStyle}>Phone Number</Text>
-          <TextInput value={phone} onChangeText={setPhone} placeholder="Enter phone" keyboardType="phone-pad" style={inputStyle} />
+          <Text style={labelStyle}>{t("exmyacc.phoneNumber")}</Text>
+          <TextInput
+            value={phone}
+            onChangeText={setPhone}
+            placeholder={t("exmyacc.enterPhone")}
+            keyboardType="phone-pad"
+            style={inputStyle}
+          />
 
           {/* Qualification */}
-          <Text style={labelStyle}>Qualification</Text>
-          <TextInput value={qualification} onChangeText={setQualification} placeholder="Enter qualification" style={inputStyle} />
+          <Text style={labelStyle}>{t("exmyacc.qualification")}</Text>
+          <TextInput
+            value={qualification}
+            onChangeText={setQualification}
+            placeholder={t("exmyacc.enterQualification")}
+            style={inputStyle}
+          />
 
           {/* Specialization */}
-          <Text style={labelStyle}>Specialization</Text>
-          <TextInput value={specialization} onChangeText={setSpecialization} placeholder="Enter specialization" style={inputStyle} />
+          <Text style={labelStyle}>{t("exmyacc.specialization")}</Text>
+          <TextInput
+            value={specialization}
+            onChangeText={setSpecialization}
+            placeholder={t("exmyacc.enterSpecialization")}
+            style={inputStyle}
+          />
 
           {/* Experience */}
-          <Text style={labelStyle}>Experience</Text>
-          <TextInput value={experience} onChangeText={setExperience} placeholder="Enter experience" keyboardType="numeric" style={inputStyle} />
+          <Text style={labelStyle}>{t("exmyacc.experience")}</Text>
+          <TextInput
+            value={experience}
+            onChangeText={setExperience}
+            placeholder={t("exmyacc.enterExperience")}
+            keyboardType="numeric"
+            style={inputStyle}
+          />
 
           {/* Save Button */}
           <TouchableOpacity onPress={handleSave} style={saveBtnStyle}>
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>Save</Text>
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
+              {t("exmyacc.save")}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </ImageBackground>
